@@ -554,9 +554,9 @@ footer em{color:var(--green);font-style:normal;}
     <ul>
       <li><a href="index.html" class="active">home</a></li>
       <li><a href="#about">about</a></li>
-      <li><a href="projects/index.html">projects</a></li>
-      <li><a href="resume.html">resume</a></li>
-      <li><a href="blog/index.html">journal</a></li>
+      <li><a href="#projects">projects</a></li>
+      <li><a href="#resume">resume</a></li>
+      <li><a href="#blog">journal</a></li>
       <li><a href="#contact">contact</a></li>
     </ul>
     <div class="nav-badge"><div class="nav-dot"></div>open to collabs</div>
@@ -583,7 +583,7 @@ footer em{color:var(--green);font-style:normal;}
         <div class="hstat"><div class="hstat-n">1</div><div class="hstat-l">patent pending</div></div>
       </div>
       <div class="hero-btns">
-        <a href="projects/index.html" class="btn btn-green">view projects</a>
+        <a href="#projects" class="btn btn-green">view projects</a>
         <a href="#blog" class="btn btn-outline">read journal</a>
       </div>
     </div>
@@ -1066,4 +1066,24 @@ function initSite() {
 
     // Leg walk animation
     legPositions.forEach(([lx,,], i) => {
-      const phase = i % 2 === 0 ? t
+      const phase = i % 2 === 0 ? t : t + Math.PI;
+      const legGroup = robot.children.filter(c => c.isGroup)[i];
+      if(legGroup) legGroup.rotation.x = Math.sin(phase) * 0.3;
+    });
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animRobot);
+  }
+  animRobot();
+
+  window.addEventListener('resize', () => {
+    const w = rCanvas.parentElement.clientWidth;
+    const h = rCanvas.parentElement.clientHeight || 420;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+}
+</script>
+</body>
+</html>

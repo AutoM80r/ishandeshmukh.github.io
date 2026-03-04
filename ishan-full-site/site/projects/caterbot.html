@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CaterBot · ishan-deshmukh</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--surface:#21262d;
+  --border:#30363d;--border2:#444c56;
+  --green:#3fb950;--blue:#58a6ff;--orange:#f78166;
+  --yellow:#e3b341;--purple:#bc8cff;
+  --text:#e6edf3;--muted:#7d8590;--dimmed:#484f58;
+  --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.7;overflow-x:hidden;}
+#pgbar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--green),var(--blue));z-index:1000;width:0%;box-shadow:0 0 6px rgba(63,185,80,0.5);}
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:14px 5vw;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--mono);font-size:0.85rem;font-weight:500;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:0;}
+.nl-dim{color:var(--muted);}.nl-green{color:var(--green);}
+nav ul{list-style:none;display:flex;gap:4px;align-items:center;}
+nav a{font-family:var(--mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:6px;border:1px solid transparent;transition:all 0.2s;letter-spacing:0.5px;}
+nav a:hover{color:var(--text);background:var(--surface);border-color:var(--border);}
+nav a.active{color:var(--text);background:var(--surface);border-color:var(--border);}
+.nav-badge{font-family:var(--mono);font-size:0.65rem;background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:var(--green);padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;}
+.nav-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+main{padding-top:80px;}
+.page-hero{padding:60px 5vw 40px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.breadcrumb{font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.breadcrumb a{color:var(--muted);text-decoration:none;}.breadcrumb a:hover{color:var(--text);}
+.breadcrumb .sep{color:var(--dimmed);}
+.page-title{font-size:clamp(1.8rem,4vw,3rem);font-weight:700;color:var(--text);letter-spacing:-0.5px;margin-bottom:10px;}
+.page-title em{color:var(--green);font-style:normal;}
+.page-sub{font-size:0.92rem;color:var(--muted);font-weight:300;line-height:1.8;max-width:600px;}
+.page-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;}
+.tag{font-family:var(--mono);font-size:0.62rem;padding:3px 10px;border-radius:4px;border:1px solid;}
+.tag-green{color:var(--green);border-color:rgba(63,185,80,0.35);background:rgba(63,185,80,0.07);}
+.tag-blue{color:var(--blue);border-color:rgba(88,166,255,0.35);background:rgba(88,166,255,0.07);}
+.tag-orange{color:var(--orange);border-color:rgba(247,129,102,0.35);background:rgba(247,129,102,0.07);}
+.tag-yellow{color:var(--yellow);border-color:rgba(227,179,65,0.35);background:rgba(227,179,65,0.07);}
+.tag-purple{color:var(--purple);border-color:rgba(188,140,255,0.35);background:rgba(188,140,255,0.07);}
+.content{padding:60px 5vw;max-width:1100px;margin:0 auto;}
+.section{margin-bottom:56px;}
+.section-label{font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.section-label::before{content:"";display:inline-block;width:20px;height:1px;background:var(--border2);}
+.section h2{font-size:1.35rem;font-weight:600;color:var(--text);margin-bottom:16px;letter-spacing:-0.3px;}
+.section p{font-size:0.9rem;color:var(--muted);line-height:1.9;font-weight:300;margin-bottom:12px;}
+.section p strong{color:var(--text);font-weight:500;}
+.spec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px;}
+.spec-item{background:var(--bg2);padding:16px;display:flex;flex-direction:column;gap:4px;}
+.spec-k{font-family:var(--mono);font-size:0.6rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.spec-v{font-family:var(--mono);font-size:0.85rem;color:var(--text);font-weight:500;}
+.spec-v em{color:var(--green);font-style:normal;}
+.img-row{display:grid;gap:12px;margin:12px 0;}
+.img-row.cols-2{grid-template-columns:1fr 1fr;}
+.img-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.img-frame{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.img-frame img{width:100%;display:block;object-fit:contain;background:#0a0a0a;max-height:320px;}
+.img-cap{font-family:var(--mono);font-size:0.6rem;color:var(--muted);padding:8px 12px;border-top:1px solid var(--border);}
+.data-table{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:16px;}
+.dt-header{background:var(--surface);padding:10px 16px;font-family:var(--mono);font-size:0.65rem;color:var(--muted);border-bottom:1px solid var(--border);letter-spacing:2px;display:flex;align-items:center;gap:10px;}
+.dt-header::before{content:"▸";color:var(--green);}
+.dt-row{display:flex;align-items:start;border-bottom:1px solid rgba(48,54,61,0.5);transition:background 0.2s;}
+.dt-row:last-child{border-bottom:none;}
+.dt-row:hover{background:var(--surface);}
+.dt-k{font-family:var(--mono);font-size:0.65rem;color:var(--muted);padding:10px 16px;min-width:160px;border-right:1px solid var(--border);letter-spacing:1px;}
+.dt-v{font-size:0.82rem;font-weight:300;color:var(--text);padding:10px 16px;}
+.vid-embed{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px;}
+.vid-embed iframe{width:100%;aspect-ratio:16/9;display:block;border:none;}
+.vid-cap{font-family:var(--mono);font-size:0.62rem;color:var(--muted);padding:8px 14px;border-top:1px solid var(--border);}
+.contrib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-top:8px;}
+.skill-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:7px;transition:all 0.2s;}
+.skill-item:hover{border-color:var(--border2);color:var(--text);}
+.sdot{width:6px;height:6px;border-radius:50%;}
+.s-green{background:#3fb950;}.s-blue{background:#58a6ff;}.s-orange{background:#f78166;}.s-yellow{background:#e3b341;}.s-purple{background:#bc8cff;}
+.btn{font-family:var(--mono);font-size:0.72rem;padding:8px 20px;border-radius:6px;text-decoration:none;transition:all 0.2s;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:8px;border:1px solid;}
+.btn-green{background:var(--green);color:#0d1117;border-color:var(--green);font-weight:600;}
+.btn-green:hover{background:#46d058;box-shadow:0 0 20px rgba(63,185,80,0.3);}
+.btn-outline{background:transparent;color:var(--text);border-color:var(--border);}
+.btn-outline:hover{background:var(--surface);border-color:var(--border2);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+footer{background:var(--bg);border-top:1px solid var(--border);padding:20px 5vw;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:0.65rem;color:var(--muted);}
+footer em{color:var(--green);font-style:normal;}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.reveal.in{opacity:1;transform:none;}
+@media(max-width:768px){
+  .img-row.cols-2,.img-row.cols-3{grid-template-columns:1fr;}
+  nav ul{display:none;}
+  .dt-k{min-width:100px;}
+}
+</style>
+
+</head>
+<body>
+<div id="pgbar"></div>
+<nav>
+  <a href="/" class="nav-logo"><span class="nl-dim">~/</span><span>ishan-deshmukh</span><span class="nl-green">█</span></a>
+  <ul><li><a href="/">home</a></li><li><a href="/about.html">about</a></li><li><a href="/projects/" class="active">projects</a></li><li><a href="/resume.html">resume</a></li><li><a href="/blog/">blog</a></li><li><a href="/contact.html">contact</a></li></ul>
+  <div class="nav-badge"><div class="nav-dot"></div>available</div>
+</nav>
+<main>
+
+<div class="page-hero">
+  <div class="breadcrumb"><a href="/">~</a><span class="sep">/</span><a href="/projects/">projects</a><span class="sep">/</span><span>caterbot</span></div>
+  <h1 class="page-title">Cater <em>Bot</em></h1>
+  <p class="page-sub">Autonomous food delivery robot with SLAM navigation, obstacle avoidance, and ROS2 control stack.</p>
+  <div class="page-tags"><span class="tag tag-green">ROS2</span><span class="tag tag-blue">LiDAR</span><span class="tag tag-blue">Python</span><span class="tag tag-green">ESP32</span><span class="tag tag-purple">SLAM</span></div>
+</div>
+<div class="content">
+
+  <div class="section reveal">
+    <div class="section-label">overview</div>
+    <p>CaterBot is an autonomous indoor delivery robot designed for cafeteria and restaurant environments. It navigates using a 2D LiDAR SLAM map, avoids dynamic obstacles, and delivers food trays to pre-mapped table locations.</p>
+    <p>The project was built as a proof-of-concept for last-10-metre autonomous delivery — the hardest part of any delivery scenario. Source code is open on GitHub.</p>
+  </div>
+  <div class="section reveal">
+    <div class="section-label">architecture</div>
+    <div class="data-table">
+      <div class="dt-header">caterbot.architecture</div>
+      <div class="dt-row"><div class="dt-k">NAVIGATION</div><div class="dt-v">ROS2 Nav2 stack with AMCL localisation on a pre-built SLAM map.</div></div>
+      <div class="dt-row"><div class="dt-k">MAPPING</div><div class="dt-v">SLAM Toolbox for initial mapping, saved as static map for runtime use.</div></div>
+      <div class="dt-row"><div class="dt-k">HARDWARE</div><div class="dt-v">ESP32 motor controller, differential drive base, 2D LiDAR.</div></div>
+      <div class="dt-row"><div class="dt-k">COMMS</div><div class="dt-v">micro-ROS on ESP32 bridging to ROS2 on Raspberry Pi 4.</div></div>
+      <div class="dt-row"><div class="dt-k">UI</div><div class="dt-v">Simple web interface to dispatch delivery goals to named table locations.</div></div>
+    </div>
+  </div>
+  <div class="section reveal">
+    <div class="vid-embed">
+      <iframe src="https://www.youtube.com/embed/G9RHZ5Birs4" allowfullscreen loading="lazy"></iframe>
+      <div class="vid-cap">CaterBot demo — autonomous navigation in cafeteria environment</div>
+    </div>
+  </div>
+  <div class="section reveal">
+    <div class="btn-row">
+      <a href="https://github.com/AutoM80r/CaterBot" target="_blank" class="btn btn-green">⬡ GitHub Repo</a>
+      <a href="https://youtu.be/G9RHZ5Birs4" target="_blank" class="btn btn-outline">▶ Demo Video</a>
+      <a href="/projects/" class="btn btn-outline">← All Projects</a>
+    </div>
+  </div>
+</div>
+</main>
+<footer>
+  <span>ishan-deshmukh<em>.dev</em> · MIT Manipal © 2025</span>
+  <span>built with <em>stm32</em> + caffeine</span>
+</footer>
+<script>
+const pgbar=document.getElementById('pgbar');
+window.addEventListener('scroll',()=>{
+  pgbar.style.width=(window.scrollY/(document.body.scrollHeight-innerHeight)*100)+'%';
+});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');})},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

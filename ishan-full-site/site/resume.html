@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Resume · ishan-deshmukh</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--surface:#21262d;
+  --border:#30363d;--border2:#444c56;
+  --green:#3fb950;--blue:#58a6ff;--orange:#f78166;
+  --yellow:#e3b341;--purple:#bc8cff;
+  --text:#e6edf3;--muted:#7d8590;--dimmed:#484f58;
+  --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.7;overflow-x:hidden;}
+#pgbar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--green),var(--blue));z-index:1000;width:0%;box-shadow:0 0 6px rgba(63,185,80,0.5);}
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:14px 5vw;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--mono);font-size:0.85rem;font-weight:500;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:0;}
+.nl-dim{color:var(--muted);}.nl-green{color:var(--green);}
+nav ul{list-style:none;display:flex;gap:4px;align-items:center;}
+nav a{font-family:var(--mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:6px;border:1px solid transparent;transition:all 0.2s;letter-spacing:0.5px;}
+nav a:hover{color:var(--text);background:var(--surface);border-color:var(--border);}
+nav a.active{color:var(--text);background:var(--surface);border-color:var(--border);}
+.nav-badge{font-family:var(--mono);font-size:0.65rem;background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:var(--green);padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;}
+.nav-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+main{padding-top:80px;}
+.page-hero{padding:60px 5vw 40px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.breadcrumb{font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.breadcrumb a{color:var(--muted);text-decoration:none;}.breadcrumb a:hover{color:var(--text);}
+.breadcrumb .sep{color:var(--dimmed);}
+.page-title{font-size:clamp(1.8rem,4vw,3rem);font-weight:700;color:var(--text);letter-spacing:-0.5px;margin-bottom:10px;}
+.page-title em{color:var(--green);font-style:normal;}
+.page-sub{font-size:0.92rem;color:var(--muted);font-weight:300;line-height:1.8;max-width:600px;}
+.page-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;}
+.tag{font-family:var(--mono);font-size:0.62rem;padding:3px 10px;border-radius:4px;border:1px solid;}
+.tag-green{color:var(--green);border-color:rgba(63,185,80,0.35);background:rgba(63,185,80,0.07);}
+.tag-blue{color:var(--blue);border-color:rgba(88,166,255,0.35);background:rgba(88,166,255,0.07);}
+.tag-orange{color:var(--orange);border-color:rgba(247,129,102,0.35);background:rgba(247,129,102,0.07);}
+.tag-yellow{color:var(--yellow);border-color:rgba(227,179,65,0.35);background:rgba(227,179,65,0.07);}
+.tag-purple{color:var(--purple);border-color:rgba(188,140,255,0.35);background:rgba(188,140,255,0.07);}
+.content{padding:60px 5vw;max-width:1100px;margin:0 auto;}
+.section{margin-bottom:56px;}
+.section-label{font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.section-label::before{content:"";display:inline-block;width:20px;height:1px;background:var(--border2);}
+.section h2{font-size:1.35rem;font-weight:600;color:var(--text);margin-bottom:16px;letter-spacing:-0.3px;}
+.section p{font-size:0.9rem;color:var(--muted);line-height:1.9;font-weight:300;margin-bottom:12px;}
+.section p strong{color:var(--text);font-weight:500;}
+.spec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px;}
+.spec-item{background:var(--bg2);padding:16px;display:flex;flex-direction:column;gap:4px;}
+.spec-k{font-family:var(--mono);font-size:0.6rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.spec-v{font-family:var(--mono);font-size:0.85rem;color:var(--text);font-weight:500;}
+.spec-v em{color:var(--green);font-style:normal;}
+.img-row{display:grid;gap:12px;margin:12px 0;}
+.img-row.cols-2{grid-template-columns:1fr 1fr;}
+.img-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.img-frame{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.img-frame img{width:100%;display:block;object-fit:contain;background:#0a0a0a;max-height:320px;}
+.img-cap{font-family:var(--mono);font-size:0.6rem;color:var(--muted);padding:8px 12px;border-top:1px solid var(--border);}
+.data-table{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:16px;}
+.dt-header{background:var(--surface);padding:10px 16px;font-family:var(--mono);font-size:0.65rem;color:var(--muted);border-bottom:1px solid var(--border);letter-spacing:2px;display:flex;align-items:center;gap:10px;}
+.dt-header::before{content:"▸";color:var(--green);}
+.dt-row{display:flex;align-items:start;border-bottom:1px solid rgba(48,54,61,0.5);transition:background 0.2s;}
+.dt-row:last-child{border-bottom:none;}
+.dt-row:hover{background:var(--surface);}
+.dt-k{font-family:var(--mono);font-size:0.65rem;color:var(--muted);padding:10px 16px;min-width:160px;border-right:1px solid var(--border);letter-spacing:1px;}
+.dt-v{font-size:0.82rem;font-weight:300;color:var(--text);padding:10px 16px;}
+.vid-embed{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px;}
+.vid-embed iframe{width:100%;aspect-ratio:16/9;display:block;border:none;}
+.vid-cap{font-family:var(--mono);font-size:0.62rem;color:var(--muted);padding:8px 14px;border-top:1px solid var(--border);}
+.contrib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-top:8px;}
+.skill-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:7px;transition:all 0.2s;}
+.skill-item:hover{border-color:var(--border2);color:var(--text);}
+.sdot{width:6px;height:6px;border-radius:50%;}
+.s-green{background:#3fb950;}.s-blue{background:#58a6ff;}.s-orange{background:#f78166;}.s-yellow{background:#e3b341;}.s-purple{background:#bc8cff;}
+.btn{font-family:var(--mono);font-size:0.72rem;padding:8px 20px;border-radius:6px;text-decoration:none;transition:all 0.2s;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:8px;border:1px solid;}
+.btn-green{background:var(--green);color:#0d1117;border-color:var(--green);font-weight:600;}
+.btn-green:hover{background:#46d058;box-shadow:0 0 20px rgba(63,185,80,0.3);}
+.btn-outline{background:transparent;color:var(--text);border-color:var(--border);}
+.btn-outline:hover{background:var(--surface);border-color:var(--border2);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+footer{background:var(--bg);border-top:1px solid var(--border);padding:20px 5vw;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:0.65rem;color:var(--muted);}
+footer em{color:var(--green);font-style:normal;}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.reveal.in{opacity:1;transform:none;}
+@media(max-width:768px){
+  .img-row.cols-2,.img-row.cols-3{grid-template-columns:1fr;}
+  nav ul{display:none;}
+  .dt-k{min-width:100px;}
+}
+</style>
+
+</head>
+<body>
+<div id="pgbar"></div>
+<nav>
+  <a href="/" class="nav-logo"><span class="nl-dim">~/</span><span>ishan-deshmukh</span><span class="nl-green">█</span></a>
+  <ul><li><a href="/">home</a></li><li><a href="/about.html">about</a></li><li><a href="/projects/">projects</a></li><li><a href="/resume.html" class="active">resume</a></li><li><a href="/blog/">blog</a></li><li><a href="/contact.html">contact</a></li></ul>
+  <div class="nav-badge"><div class="nav-dot"></div>available</div>
+</nav>
+<main>
+
+<div class="page-hero">
+  <div class="breadcrumb"><a href="/">ishan-deshmukh</a><span class="sep">/</span><span>resume.pdf</span></div>
+  <h1 class="page-title">Resume <em>/ CV</em></h1>
+  <p class="page-sub">4th year Mechatronics Engineering. Robotics, firmware, and competitive robot design.</p>
+  <div style="margin-top:16px;">
+    <a href="mailto:ishanmechatronics@gmail.com" class="btn btn-green" style="font-family:var(--mono);font-size:0.72rem;padding:8px 20px;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#0d1117;border:1px solid var(--green);font-weight:600;">↓ Request Full Resume</a>
+  </div>
+</div>
+<div class="content">
+  <div style="max-width:760px;">
+    <div class="section reveal">
+      <div class="section-label">education</div>
+      <div class="data-table">
+        <div class="dt-header">education.log</div>
+        <div class="dt-row"><div class="dt-k">2022–2026</div><div class="dt-v"><strong>MIT Manipal</strong> — B.Tech Mechatronics Engineering · GPA 7.60/10.00</div></div>
+        <div class="dt-row"><div class="dt-k">2020–2022</div><div class="dt-v"><strong>Shubham Raje Jr. College</strong> — HSC · 79.3%</div></div>
+        <div class="dt-row"><div class="dt-k">2010–2020</div><div class="dt-v"><strong>DAV International School, Thane</strong> — SSC · 91.3%</div></div>
+      </div>
+    </div>
+    <div class="section reveal">
+      <div class="section-label">experience</div>
+      <div class="data-table">
+        <div class="dt-header">experience.log</div>
+        <div class="dt-row"><div class="dt-k">JUN–JUL 2025</div><div class="dt-v"><strong>KUKA Robotics India, Pune</strong> — Intern<br><span style="color:var(--muted);font-size:0.8rem;">Industrial arm programming, KUKA.WorkVisual, PLC integration, workcell setup.</span></div></div>
+        <div class="dt-row"><div class="dt-k">AUG 2023–FEB 2025</div><div class="dt-v"><strong>Team Robomanipal</strong> — Core Technical Member<br><span style="color:var(--muted);font-size:0.8rem;">Designed and built 5+ competition robots for DD Robocon. Firmware (STM32), mechanical CAD, PCB design. Achieved AIR 22 in 2025.</span></div></div>
+        <div class="dt-row"><div class="dt-k">OCT 2023–FEB 2025</div><div class="dt-v"><strong>Institution of Engineers India — MIT Manipal</strong> — Mechatronics Head<br><span style="color:var(--muted);font-size:0.8rem;">Led 200+ member domain. Organised technical workshops, hackathons, and sessions on robotics, PCB design, and embedded systems.</span></div></div>
+      </div>
+    </div>
+    <div class="section reveal">
+      <div class="section-label">projects (key)</div>
+      <div class="data-table">
+        <div class="dt-header">projects.key</div>
+        <div class="dt-row"><div class="dt-k">Robocon R1</div><div class="dt-v">Manual holonomic robot — ball launcher, 6-gripper seedling picker. STM32 + RPi4 + ROS2.</div></div>
+        <div class="dt-row"><div class="dt-k">Robocon R2</div><div class="dt-v">Autonomous robot — YOLOv5, RTAB-Map SLAM, 3-finger gripper. Jetson Nano.</div></div>
+        <div class="dt-row"><div class="dt-k">Quadruped</div><div class="dt-v">12-DOF legged robot. SolidWorks CAD, gait controller. Featured on GrabCAD.</div></div>
+        <div class="dt-row"><div class="dt-k">CaterBot</div><div class="dt-v">Autonomous delivery robot. ROS2 Nav2, SLAM. Open source on GitHub.</div></div>
+        <div class="dt-row"><div class="dt-k">ML BCG</div><div class="dt-v">Signal classification pipeline for cardiac monitoring. Published paper.</div></div>
+        <div class="dt-row"><div class="dt-k">Stim Toy</div><div class="dt-v">Multi-sensory assistive toy for children. Patent filed.</div></div>
+      </div>
+    </div>
+    <div class="section reveal">
+      <div class="section-label">skills</div>
+      <div style="margin-bottom:10px;font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:1px;">LANGUAGES</div>
+      <div class="contrib-grid"><div class="skill-item"><div class="sdot s-green"></div>Python</div><div class="skill-item"><div class="sdot s-green"></div>C++</div><div class="skill-item"><div class="sdot s-green"></div>Embedded C</div><div class="skill-item"><div class="sdot s-green"></div>MATLAB</div><div class="skill-item"><div class="sdot s-green"></div>Git</div></div>
+      <div style="margin:12px 0 10px;font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:1px;">HARDWARE & FIRMWARE</div>
+      <div class="contrib-grid"><div class="skill-item"><div class="sdot s-blue"></div>STM32</div><div class="skill-item"><div class="sdot s-blue"></div>ESP32</div><div class="skill-item"><div class="sdot s-blue"></div>Arduino</div><div class="skill-item"><div class="sdot s-blue"></div>Raspberry Pi</div><div class="skill-item"><div class="sdot s-blue"></div>Jetson Nano</div><div class="skill-item"><div class="sdot s-blue"></div>KiCad</div><div class="skill-item"><div class="sdot s-blue"></div>PCB Design</div></div>
+      <div style="margin:12px 0 10px;font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:1px;">ROBOTICS & TOOLS</div>
+      <div class="contrib-grid"><div class="skill-item"><div class="sdot s-orange"></div>ROS2</div><div class="skill-item"><div class="sdot s-orange"></div>SLAM</div><div class="skill-item"><div class="sdot s-orange"></div>Gazebo</div><div class="skill-item"><div class="sdot s-orange"></div>SolidWorks</div><div class="skill-item"><div class="sdot s-orange"></div>Fusion 360</div><div class="skill-item"><div class="sdot s-orange"></div>3D Printing</div><div class="skill-item"><div class="sdot s-orange"></div>PID Control</div></div>
+    </div>
+    <div class="section reveal">
+      <div class="section-label">achievements</div>
+      <div class="data-table">
+        <div class="dt-header">achievements.log</div>
+        <div class="dt-row"><div class="dt-k">DD ROBOCON 2025</div><div class="dt-v">All India Rank 22</div></div>
+        <div class="dt-row"><div class="dt-k">PUBLICATIONS</div><div class="dt-v">2 research papers</div></div>
+        <div class="dt-row"><div class="dt-k">PATENT</div><div class="dt-v">1 filed (sensory stimulation toy)</div></div>
+        <div class="dt-row"><div class="dt-k">GRABCAD</div><div class="dt-v">Quadruped robot — featured model</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+<footer>
+  <span>ishan-deshmukh<em>.dev</em> · MIT Manipal © 2025</span>
+  <span>built with <em>stm32</em> + caffeine</span>
+</footer>
+<script>
+const pgbar=document.getElementById('pgbar');
+window.addEventListener('scroll',()=>{
+  pgbar.style.width=(window.scrollY/(document.body.scrollHeight-innerHeight)*100)+'%';
+});
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');})},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

@@ -1,16 +1,17 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { PROJECTS, type BadgeVariant } from '@/lib/data'
 import { SectionHeader } from './About'
 
-const BADGE_STYLES: Record<BadgeVariant, { color: string; border: string; bg: string }> = {
-  green:  { color: 'var(--green)',  border: 'rgba(63,185,80,0.4)',  bg: 'rgba(63,185,80,0.08)'  },
-  blue:   { color: 'var(--blue)',   border: 'rgba(88,166,255,0.4)', bg: 'rgba(88,166,255,0.08)' },
-  yellow: { color: 'var(--yellow)', border: 'rgba(227,179,65,0.4)', bg: 'rgba(227,179,65,0.08)' },
-  orange: { color: 'var(--orange)', border: 'rgba(247,129,102,0.4)',bg: 'rgba(247,129,102,0.08)'},
+export const BADGE_STYLES: Record<BadgeVariant, React.CSSProperties> = {
+  green:  { color: 'var(--green)',  borderColor: 'rgba(63,185,80,0.4)',   background: 'rgba(63,185,80,0.08)',   border: '1px solid rgba(63,185,80,0.4)'   },
+  blue:   { color: 'var(--blue)',   borderColor: 'rgba(88,166,255,0.4)',  background: 'rgba(88,166,255,0.08)',  border: '1px solid rgba(88,166,255,0.4)'  },
+  yellow: { color: 'var(--yellow)', borderColor: 'rgba(227,179,65,0.4)',  background: 'rgba(227,179,65,0.08)',  border: '1px solid rgba(227,179,65,0.4)'  },
+  orange: { color: 'var(--orange)', borderColor: 'rgba(247,129,102,0.4)', background: 'rgba(247,129,102,0.08)', border: '1px solid rgba(247,129,102,0.4)' },
 }
 
 export default function Projects() {
@@ -45,7 +46,7 @@ export default function Projects() {
                     <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>⬡</span>
                     {p.name}
                   </div>
-                  <span className="text-[0.6rem] px-2 py-[2px] rounded-full border" style={{ fontFamily: 'var(--font-mono-var)', color: badge.color, borderColor: badge.border, background: badge.bg }}>
+                  <span className="text-[0.6rem] px-2 py-[2px] rounded-full" style={{ fontFamily: 'var(--font-mono-var)', ...badge }}>
                     {p.badge}
                   </span>
                 </div>

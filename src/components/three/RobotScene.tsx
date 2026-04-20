@@ -1,245 +1,196 @@
 'use client'
 
-import { useRef } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { useGLTF, OrbitControls, Environment, Center } from '@react-three/drei'
 import * as THREE from 'three'
 
-/* ── materials (module-level, created once) ────────────────────────────── */
-const M_ARM    = new THREE.MeshStandardMaterial({ color: '#13131a', metalness: 0.96, roughness: 0.10 })
-const M_JOINT  = new THREE.MeshStandardMaterial({ color: '#09090e', metalness: 1.00, roughness: 0.04 })
-const M_RIDGE  = new THREE.MeshStandardMaterial({ color: '#1c1c28', metalness: 0.90, roughness: 0.32 })
-const M_PCB    = new THREE.MeshStandardMaterial({ color: '#050e06', metalness: 0.06, roughness: 0.90 })
-const M_CHIP   = new THREE.MeshStandardMaterial({ color: '#0d0d14', metalness: 0.78, roughness: 0.24 })
-const M_GOLD   = new THREE.MeshStandardMaterial({ color: '#a05f00', metalness: 1.00, roughness: 0.05, emissive: '#ff4400', emissiveIntensity: 0.55 })
-const M_COPPER = new THREE.MeshStandardMaterial({ color: '#6a2e00', metalness: 0.88, roughness: 0.18, emissive: '#ff3300', emissiveIntensity: 0.30 })
-
-/* ── one finger segment + knuckle groove ───────────────────────────────── */
-function Seg({ len, w }: { len: number; w: number }) {
-  return (
-    <group>
-      <mesh material={M_ARM}>
-        <boxGeometry args={[w, len, w * 0.72]} />
-      </mesh>
-      {/* raised ridge panel */}
-      <mesh position={[0, len * 0.22, 0]} material={M_RIDGE}>
-        <boxGeometry args={[w * 1.06, len * 0.10, w * 0.80]} />
-      </mesh>
-      {/* knuckle cylinder at base */}
-      <mesh position={[0, -len / 2, 0]} material={M_JOINT}>
-        <cylinderGeometry args={[w * 0.42, w * 0.42, w * 0.30, 14]} />
-      </mesh>
-    </group>
-  )
+/* ── joint state ────────────────────────────────────────── */
+interface Joints {
+  base:     number   // mainColumn  – Y axis
+  shoulder: number   // upperArm    – X axis
+  elbow:    number   // elbow       – X axis
+  wrist:    number   // wrist       – X axis
 }
 
-/* ── 3-segment finger ───────────────────────────────────────────────────── */
-function Finger({
-  pos, rot, b1 = 0.48, b2 = 0.56, scale = 1,
-}: {
-  pos: [number, number, number]
-  rot: [number, number, number]
-  b1?: number
-  b2?: number
-  scale?: number
-}) {
-  const L0 = 0.28 * scale
-  const L1 = 0.22 * scale
-  const L2 = 0.17 * scale
-  const W  = 0.066 * scale
-
-  return (
-    <group position={pos} rotation={rot}>
-      <Seg len={L0} w={W} />
-      <group position={[0, -L0, 0]} rotation={[b1, 0, 0]}>
-        <Seg len={L1} w={W * 0.86} />
-        <group position={[0, -L1, 0]} rotation={[b2, 0, 0]}>
-          <Seg len={L2} w={W * 0.70} />
-          {/* fingertip pad */}
-          <mesh position={[0, -L2 * 0.58, 0]} material={M_JOINT}>
-            <boxGeometry args={[W * 0.60, L2 * 0.38, W * 0.54]} />
-          </mesh>
-        </group>
-      </group>
-    </group>
-  )
+const POSES: Record<string, Joints> = {
+  default: { base: 0,    shoulder: -0.3, elbow: 0.6,  wrist: -0.3 },
+  reach:   { base: 0.6,  shoulder: -0.8, elbow: 1.2,  wrist: -0.5 },
+  pick:    { base: -0.4, shoulder: -1.1, elbow: 1.4,  wrist: 0.2  },
+  extend:  { base: 0,    shoulder: -0.1, elbow: 0.1,  wrist: -0.1 },
 }
 
-/* ── PCB board with components ─────────────────────────────────────────── */
-function PCBoard() {
-  const glowRef = useRef<THREE.MeshStandardMaterial>(null!)
+/* ── 3‑D arm (inside Canvas) ────────────────────────────── */
+function Arm({ joints }: { joints: Joints }) {
+  const { nodes, scene } = useGLTF('/robot.glb') as any
+  const cur = useRef<Joints>({ ...POSES.default })
 
-  useFrame(({ clock }) => {
-    glowRef.current.emissiveIntensity = 2.2 + Math.sin(clock.getElapsedTime() * 2.2) * 0.7
+  useFrame(() => {
+    const s = 0.09
+    cur.current.base     = THREE.MathUtils.lerp(cur.current.base,     joints.base,     s)
+    cur.current.shoulder = THREE.MathUtils.lerp(cur.current.shoulder, joints.shoulder, s)
+    cur.current.elbow    = THREE.MathUtils.lerp(cur.current.elbow,    joints.elbow,    s)
+    cur.current.wrist    = THREE.MathUtils.lerp(cur.current.wrist,    joints.wrist,    s)
+
+    if (nodes.mainColumn) nodes.mainColumn.rotation.y = cur.current.base
+    if (nodes.upperArm)   nodes.upperArm.rotation.x   = cur.current.shoulder
+    if (nodes.elbow)      nodes.elbow.rotation.x       = cur.current.elbow
+    if (nodes.wrist)      nodes.wrist.rotation.x       = cur.current.wrist
   })
 
   return (
-    <group position={[0, -0.44, 0.02]} rotation={[-0.05, 0.18, 0]}>
+    <Center>
+      <primitive object={scene} scale={2.6} />
+    </Center>
+  )
+}
 
-      {/* board base */}
-      <mesh material={M_PCB}>
-        <boxGeometry args={[1.5, 0.032, 1.05]} />
-      </mesh>
+useGLTF.preload('/robot.glb')
 
-      {/* ── centre glow chip (the one the hand targets) ── */}
-      <mesh position={[0, 0.048, 0]}>
-        <boxGeometry args={[0.19, 0.052, 0.19]} />
-        <meshStandardMaterial
-          ref={glowRef}
-          color="#0d0d12"
-          metalness={0.8}
-          roughness={0.2}
-          emissive="#ff5500"
-          emissiveIntensity={2.2}
+/* ── slider component ───────────────────────────────────── */
+function Slider({
+  label, value, min, max, onChange,
+}: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span
+        style={{
+          fontFamily: 'var(--font-mono-var)', fontSize: '0.60rem',
+          color: 'var(--muted)', width: 56, flexShrink: 0,
+        }}
+      >
+        {label}
+      </span>
+      <div style={{ flex: 1, position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
+        {/* track background */}
+        <div style={{ position: 'absolute', left: 0, right: 0, height: 2, borderRadius: 2, background: 'var(--border)' }} />
+        {/* track fill */}
+        <div
+          style={{
+            position: 'absolute', left: 0, height: 2, borderRadius: 2,
+            background: 'var(--green)',
+            width: `${((value - min) / (max - min)) * 100}%`,
+          }}
         />
-      </mesh>
-
-      {/* gold pins — all four sides of centre chip */}
-      {([-0.07, -0.035, 0, 0.035, 0.07] as number[]).map((x, i) => (
-        <mesh key={`nt${i}`} position={[x, 0.054,  0.11]} material={M_GOLD}>
-          <boxGeometry args={[0.011, 0.008, 0.038]} />
-        </mesh>
-      ))}
-      {([-0.07, -0.035, 0, 0.035, 0.07] as number[]).map((x, i) => (
-        <mesh key={`nb${i}`} position={[x, 0.054, -0.11]} material={M_GOLD}>
-          <boxGeometry args={[0.011, 0.008, 0.038]} />
-        </mesh>
-      ))}
-      {([-0.07, -0.035, 0, 0.035, 0.07] as number[]).map((z, i) => (
-        <mesh key={`nl${i}`} position={[-0.11, 0.054, z]} material={M_GOLD}>
-          <boxGeometry args={[0.038, 0.008, 0.011]} />
-        </mesh>
-      ))}
-      {([-0.07, -0.035, 0, 0.035, 0.07] as number[]).map((z, i) => (
-        <mesh key={`nr${i}`} position={[0.11, 0.054, z]} material={M_GOLD}>
-          <boxGeometry args={[0.038, 0.008, 0.011]} />
-        </mesh>
-      ))}
-
-      {/* other ICs */}
-      <mesh position={[-0.42, 0.046, -0.22]} material={M_CHIP}><boxGeometry args={[0.14, 0.050, 0.09]} /></mesh>
-      <mesh position={[ 0.38, 0.044, 0.26]}  material={M_CHIP}><boxGeometry args={[0.11, 0.044, 0.07]} /></mesh>
-      <mesh position={[-0.22, 0.044, 0.36]}  material={M_CHIP}><boxGeometry args={[0.09, 0.044, 0.11]} /></mesh>
-      <mesh position={[ 0.50, 0.042, -0.16]} material={M_CHIP}><boxGeometry args={[0.07, 0.040, 0.07]} /></mesh>
-      <mesh position={[-0.54, 0.044, 0.10]}  material={M_CHIP}><boxGeometry args={[0.13, 0.044, 0.06]} /></mesh>
-      <mesh position={[ 0.16, 0.042, -0.40]} material={M_CHIP}><boxGeometry args={[0.09, 0.040, 0.09]} /></mesh>
-      <mesh position={[-0.28, 0.040, -0.38]} material={M_CHIP}><boxGeometry args={[0.07, 0.036, 0.07]} /></mesh>
-      <mesh position={[ 0.38, 0.046, 0.38]}  material={M_CHIP}><boxGeometry args={[0.11, 0.046, 0.07]} /></mesh>
-
-      {/* electrolytic capacitors */}
-      <mesh position={[ 0.58, 0.064, 0.28]}  material={M_COPPER}><cylinderGeometry args={[0.024, 0.024, 0.086, 8]} /></mesh>
-      <mesh position={[ 0.50, 0.058, 0.12]}  material={M_COPPER}><cylinderGeometry args={[0.018, 0.018, 0.074, 8]} /></mesh>
-      <mesh position={[-0.52, 0.064, -0.28]} material={M_COPPER}><cylinderGeometry args={[0.024, 0.024, 0.086, 8]} /></mesh>
-      <mesh position={[-0.34, 0.058, 0.40]}  material={M_COPPER}><cylinderGeometry args={[0.018, 0.018, 0.070, 8]} /></mesh>
-
-      {/* copper traces */}
-      <mesh position={[-0.26, 0.022, 0.00]}  material={M_GOLD}><boxGeometry args={[0.19, 0.004, 0.007]} /></mesh>
-      <mesh position={[ 0.22, 0.022, 0.10]}  material={M_GOLD}><boxGeometry args={[0.14, 0.004, 0.007]} /></mesh>
-      <mesh position={[ 0.00, 0.022, 0.24]}  material={M_GOLD}><boxGeometry args={[0.007, 0.004, 0.18]} /></mesh>
-      <mesh position={[-0.10, 0.022, -0.20]} material={M_GOLD}><boxGeometry args={[0.007, 0.004, 0.15]} /></mesh>
-      <mesh position={[ 0.32, 0.022, -0.10]} material={M_GOLD}><boxGeometry args={[0.22, 0.004, 0.007]} /></mesh>
-      <mesh position={[-0.40, 0.022, 0.10]}  material={M_GOLD}><boxGeometry args={[0.007, 0.004, 0.22]} /></mesh>
-    </group>
+        <input
+          type="range" min={min} max={max} step={0.02} value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{
+            position: 'absolute', left: 0, right: 0, width: '100%',
+            opacity: 0, cursor: 'pointer', height: 16, margin: 0,
+          }}
+        />
+        {/* thumb */}
+        <div
+          style={{
+            position: 'absolute',
+            left: `calc(${((value - min) / (max - min)) * 100}% - 6px)`,
+            width: 12, height: 12, borderRadius: '50%',
+            background: 'var(--green)', border: '2px solid var(--bg2)',
+            boxShadow: '0 0 6px rgba(63,185,80,0.5)',
+            pointerEvents: 'none', transition: 'left 0.02s',
+          }}
+        />
+      </div>
+      <span style={{ fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', color: 'var(--dimmed)', width: 30, textAlign: 'right' }}>
+        {value.toFixed(1)}
+      </span>
+    </div>
   )
 }
 
-/* ── mechanical arm + hand ─────────────────────────────────────────────── */
-function RobotHand() {
-  const root = useRef<THREE.Group>(null!)
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-    root.current.position.y = Math.sin(t * 0.72) * 0.016
-    root.current.rotation.z = Math.sin(t * 0.48) * 0.005
-    root.current.rotation.x = Math.sin(t * 0.55) * 0.004
-  })
-
-  return (
-    <group ref={root} position={[0.04, 0.30, 0.06]}>
-
-      {/* ── forearm (exits top of frame) ── */}
-      <mesh position={[0, 0.74, 0]} material={M_ARM}>
-        <cylinderGeometry args={[0.115, 0.130, 1.05, 18]} />
-      </mesh>
-      {/* ring collars */}
-      {([0.22, 0.46, 0.70] as number[]).map((y, i) => (
-        <mesh key={i} position={[0, y, 0]} material={M_JOINT}>
-          <cylinderGeometry args={[0.133, 0.133, 0.026, 18]} />
-        </mesh>
-      ))}
-      {/* four cable runs along forearm */}
-      {([0, 1, 2, 3] as number[]).map(i => (
-        <mesh
-          key={i}
-          position={[Math.sin(i * Math.PI / 2) * 0.108, 0.50, Math.cos(i * Math.PI / 2) * 0.108]}
-          material={M_RIDGE}
-        >
-          <boxGeometry args={[0.016, 0.72, 0.016]} />
-        </mesh>
-      ))}
-
-      {/* ── wrist ── */}
-      <mesh position={[0, 0.055, 0]} material={M_JOINT}>
-        <cylinderGeometry args={[0.130, 0.112, 0.13, 18]} />
-      </mesh>
-      <mesh position={[0, -0.008, 0]} material={M_RIDGE}>
-        <cylinderGeometry args={[0.115, 0.115, 0.042, 20]} />
-      </mesh>
-
-      {/* ── palm ── */}
-      <mesh position={[0, -0.115, 0]} material={M_ARM}>
-        <boxGeometry args={[0.24, 0.108, 0.17]} />
-      </mesh>
-      {/* recessed palm panel */}
-      <mesh position={[0, -0.115, 0]} material={M_RIDGE}>
-        <boxGeometry args={[0.18, 0.068, 0.12]} />
-      </mesh>
-      {/* palm side rails */}
-      <mesh position={[-0.122, -0.115, 0]} material={M_JOINT}>
-        <boxGeometry args={[0.008, 0.096, 0.15]} />
-      </mesh>
-      <mesh position={[ 0.122, -0.115, 0]} material={M_JOINT}>
-        <boxGeometry args={[0.008, 0.096, 0.15]} />
-      </mesh>
-
-      {/* ── 4 fingers ── (point mostly down, curl toward PCB) */}
-      <Finger pos={[-0.090, -0.178, 0.06]} rot={[-0.32,  0.10,  0.07]} b1={0.50} b2={0.58} />
-      <Finger pos={[-0.030, -0.178, 0.08]} rot={[-0.28,  0.02,  0.02]} b1={0.48} b2={0.56} />
-      <Finger pos={[ 0.030, -0.178, 0.08]} rot={[-0.28, -0.02, -0.02]} b1={0.48} b2={0.56} />
-      <Finger pos={[ 0.090, -0.178, 0.06]} rot={[-0.32, -0.10, -0.07]} b1={0.50} b2={0.58} />
-
-      {/* ── thumb (shorter, rotated out to the side) ── */}
-      <Finger pos={[0.142, -0.095, 0.04]} rot={[-0.28, 0.12, -1.12]} b1={0.38} b2={0.46} scale={0.86} />
-    </group>
-  )
-}
-
-/* ── canvas / scene ─────────────────────────────────────────────────────── */
+/* ── exported scene ─────────────────────────────────────── */
 export default function RobotScene() {
+  const [joints, setJoints] = useState<Joints>({ ...POSES.default })
+  const [activePreset, setActivePreset] = useState<string>('default')
+
+  function applyPreset(name: string) {
+    setJoints({ ...POSES[name] })
+    setActivePreset(name)
+  }
+
+  function setJoint(key: keyof Joints, value: number) {
+    setJoints(prev => ({ ...prev, [key]: value }))
+    setActivePreset('')
+  }
+
   return (
-    <Canvas
-      camera={{ position: [0.42, 0.08, 1.05], fov: 50 }}
-      gl={{
-        antialias: true,
-        alpha: true,
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.15,
-      }}
-    >
-      {/* near-zero ambient — scene is drama-lit */}
-      <ambientLight intensity={0.03} color="#1030ff" />
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg2)' }}>
 
-      {/* key light — cool blue-white from upper right (like studio rim) */}
-      <directionalLight position={[3, 5, 1.5]} intensity={2.2} color="#b0ccff" />
+      {/* ── 3‑D canvas ── */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <Canvas
+          camera={{ position: [4, 2.5, 4.5], fov: 38 }}
+          gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        >
+          <ambientLight intensity={0.55} />
+          <directionalLight position={[5, 8, 4]}  intensity={1.6} color="#ffffff" castShadow />
+          <directionalLight position={[-4, 2, -3]} intensity={0.5} color="#b0d0ff" />
+          <pointLight position={[0, -1, 2]} color="#3fb950" intensity={1.5} distance={6} />
 
-      {/* PCB orange glow rising from below */}
-      <pointLight position={[0, -0.38, 0.14]} intensity={7}  color="#ff5200" distance={2.2} decay={2} />
-      <pointLight position={[0.08, -0.30, 0.18]} intensity={3.5} color="#ff8800" distance={1.6} decay={2} />
+          <Suspense fallback={null}>
+            <Arm joints={joints} />
+            <Environment preset="city" environmentIntensity={0.3} />
+          </Suspense>
 
-      {/* back-left rim — deep blue */}
-      <pointLight position={[-2.5, 1.2, -1.5]} intensity={1.4} color="#3060ff" distance={6} decay={1.5} />
+          <OrbitControls
+            enableZoom={false}
+            enablePan={false}
+            minPolarAngle={Math.PI * 0.18}
+            maxPolarAngle={Math.PI * 0.62}
+          />
+        </Canvas>
+      </div>
 
-      <RobotHand />
-      <PCBoard />
-    </Canvas>
+      {/* ── controls panel ── */}
+      <div
+        style={{
+          padding: '10px 14px 12px',
+          background: 'var(--bg)',
+          borderTop: '1px solid var(--border)',
+          flexShrink: 0,
+        }}
+      >
+        {/* pose presets */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          {Object.keys(POSES).map(name => (
+            <button
+              key={name}
+              onClick={() => applyPreset(name)}
+              style={{
+                fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem',
+                padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+                border: `1px solid ${activePreset === name ? 'var(--green)' : 'var(--border)'}`,
+                background: activePreset === name ? 'rgba(63,185,80,0.12)' : 'var(--surface)',
+                color: activePreset === name ? 'var(--green)' : 'var(--muted)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {name}
+            </button>
+          ))}
+          <button
+            onClick={() => applyPreset('default')}
+            style={{
+              fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem',
+              padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)', color: 'var(--muted)',
+              marginLeft: 'auto', transition: 'all 0.15s',
+            }}
+          >
+            reset
+          </button>
+        </div>
+
+        {/* joint sliders */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <Slider label="Base"     value={joints.base}     min={-Math.PI} max={Math.PI}  onChange={v => setJoint('base', v)} />
+          <Slider label="Shoulder" value={joints.shoulder} min={-1.5}     max={0.3}      onChange={v => setJoint('shoulder', v)} />
+          <Slider label="Elbow"    value={joints.elbow}    min={-0.2}     max={1.8}      onChange={v => setJoint('elbow', v)} />
+          <Slider label="Wrist"    value={joints.wrist}    min={-1.5}     max={1.5}      onChange={v => setJoint('wrist', v)} />
+        </div>
+      </div>
+    </div>
   )
 }

@@ -334,5 +334,125 @@ export const CONTACT_LINKS = [
   { href: 'mailto:ishanmechatronics@gmail.com', icon: '✉', label: 'ishanmechatronics@gmail.com', tag: 'email' },
   { href: 'https://linkedin.com/in/ishan-deshmukh-3b7412247', icon: 'in', label: 'ishan-deshmukh-3b7412247', tag: 'linkedin' },
   { href: 'https://github.com/AutoM80r', icon: '⌥', label: 'AutoM80r', tag: 'github' },
-  { href: '/resume.html', icon: '↗', label: 'View Full Resume', tag: 'cv' },
+  { href: '/resume', icon: '↗', label: 'View Full Resume', tag: 'cv' },
 ]
+
+/* ── journal ─────────────────────────────────────────────── */
+export interface JournalPost {
+  slug: string
+  title: string
+  date: string
+  tags: string[]
+  excerpt: string
+  content: string[]
+}
+
+export const JOURNAL_POSTS: JournalPost[] = [
+  {
+    slug: 'robocon-2025-air22',
+    title: 'AIR 22 — What Robocon Actually Feels Like From the Inside',
+    date: '2025-04-20',
+    tags: ['competition', 'robocon', 'reflection'],
+    excerpt: 'We missed ABU Robocon qualification by 10 ranks. Everyone congratulated us. I didn\'t know what to feel. Here\'s what that experience actually looked like from inside the team.',
+    content: [
+      'There\'s a specific kind of silence that happens in the pits when the final scoreboard goes up and you realise you\'re rank 22. Not bad enough to feel like failure. Not good enough to go to Thailand. Just — 22nd.',
+      'Team Robomanipal had been building toward Robocon 2025 for eight months. Two robots. R1 with the vision-guided manipulator arm, omnidirectional drive, depth camera integration. R2 with the drum mechanism and the inter-robot comms protocol I\'d spent three weeks debugging at 2am. We had tested every subsystem until it was boring to test.',
+      'The competition itself was three days of controlled chaos. Our BLDC controllers survived. The RealSense depth camera did exactly what we needed it to do — ±3mm localisation accuracy under arena lighting that wasn\'t designed for computer vision. The custom PCBs I\'d designed had zero field failures across every match we played.',
+      'We beat teams we weren\'t supposed to beat. We lost to teams we\'d hoped to beat. We fixed a motor driver issue between matches by desoldering and reflowing a component in the pit with eight minutes on the clock. That worked.',
+      'The number that sticks with me isn\'t 22. It\'s 12. We were 12 ranks from ABU qualification. That\'s not a comfortable margin. That\'s a result that tells you exactly where the ceiling is, and how much further the ceiling needs to move.',
+      'I don\'t think of it as failure. Failure would have been robots that didn\'t work, or a team that gave up after the first loss. What we had was a result that was precise enough to learn from — and that\'s genuinely useful. The vision pipeline needs to be more robust to lighting changes. The arm\'s cycle time needs to drop by 0.8 seconds. I know exactly what to fix.',
+      'The silence in the pits eventually broke. People packed up equipment, someone made a bad joke, we went and got food. That\'s how it ends. Not dramatically. Just — packing up, going home, and already thinking about next season.',
+    ],
+  },
+  {
+    slug: 'quadruped-lessons',
+    title: 'What Building a Quadruped Taught Me About Engineering Failure',
+    date: '2025-01-14',
+    tags: ['robotics', 'mechanical', 'lessons'],
+    excerpt: 'I designed four versions of the same leg assembly before one actually worked. Here\'s what I got wrong each time, and why I think getting things wrong is the only way to actually understand kinematics.',
+    content: [
+      'The first leg I designed for my quadruped stripped its servo horn in about 40 seconds of operation. Not 40 minutes. 40 seconds. I had calculated the torque requirement, I had added a safety factor, and it still stripped. The issue was that I\'d calculated static load torque and completely ignored impact loading during the stance-to-swing transition.',
+      'That was version one. Version two had better servo horns (metal, not plastic) and a slightly different joint geometry. It lasted longer — maybe 10 minutes before the hip joint developed so much slop that the IK solution became meaningless. The printed PLA at the hip bore 100% of the reaction force with no metal reinforcement. Obvious in hindsight.',
+      'What makes mechanical design genuinely hard is that your mistakes are invisible until they\'re catastrophic. Software bugs throw exceptions. Mechanical failures just happen — sometimes slowly, sometimes immediately, always at the worst possible moment.',
+      'Version three introduced proper steel inserts at every load-bearing joint. It also introduced a new problem: the leg was now heavy enough that the servo at the hip couldn\'t actually lift it fast enough for a dynamic gait. I had optimised for stiffness and completely ignored the inertial budget.',
+      'Version four finally worked. Shorter links, lighter materials in non-critical areas, servo selection based on the actual required torque at max angular velocity rather than the static holding torque. The crawl gait runs cleanly. The dynamic trot is still in progress — servo torque is still the bottleneck, just a much smaller one.',
+      'The thing I learned that I hadn\'t expected to learn: engineering intuition is mostly scar tissue. Every wrong assumption I made about the leg design became knowledge I genuinely own now, in a way that reading about it never would have given me. I know why PLA creeps under sustained load. I know why MG996R specs lie about stall torque. I know that impact loading is almost always bigger than you think.',
+      'The quadruped isn\'t finished. It might not ever be fully finished — that\'s true of most personal projects. But version four can crawl across a flat surface with all four legs moving in sequence, and that\'s an outcome that required knowing exactly how to fail four times first.',
+    ],
+  },
+  {
+    slug: 'why-firmware-at-2am',
+    title: 'Why I Write Firmware at 2am (And Why That\'s Probably Fine)',
+    date: '2024-11-02',
+    tags: ['personal', 'embedded', 'mindset'],
+    excerpt: 'There is a specific kind of flow state that happens when you\'re debugging a BLDC controller at 2am and the oscilloscope suddenly shows exactly the waveform it should. I have no good explanation for why this feels better than it does at 2pm.',
+    content: [
+      'I want to be clear that I don\'t romanticise sleep deprivation. That\'s not what this is about. What I want to try to describe is something more specific: the way certain kinds of technical problems are only fully visible when everything else is quiet.',
+      'Embedded systems debugging, specifically, has this quality. When you\'re chasing a timing bug in a UART protocol — the kind where the first byte of every fifth transmission gets corrupted, but only when the motor is running — you need to hold a lot of state in your head simultaneously. The DMA configuration, the interrupt priorities, the baud rate tolerance, the electrical noise spectrum from the BLDC drive. That\'s a lot of context to maintain.',
+      'At 2am, there are no notifications. No one is going to message me. The lab is empty. The oscilloscope is the most interesting thing in the room. I can actually just — think.',
+      'I found the Robocon R2 UART corruption issue at 2:47am on a Thursday about six weeks before competition. It was a DMA transfer length mismatch — off by one byte — that only manifested when the motor controller was generating significant electrical noise on the ground plane. The fix took four lines of code. The finding took five hours.',
+      'I\'ve started to think the 2am thing isn\'t about the time. It\'s about the depth of attention. You can recreate that depth at 2pm if you have enough uninterrupted focus, enough context loaded, enough commitment to staying with the problem even when it doesn\'t yield immediately. It\'s just harder to protect that space during daylight hours.',
+      'The Tony Stark model of engineering, which I think about more than I probably should, is built on this idea: the best things get built by people who are genuinely obsessed with the problem. Not as a personality trait to perform, but because the problem is actually interesting enough to deserve that level of attention.',
+      'The BLDC controller at 2am is interesting. The quadruped leg that stripped its servo horn is interesting. The depth camera localisation pipeline that had to work under arena lighting that wasn\'t designed for vision systems — that was a genuinely hard, genuinely interesting problem. I don\'t think the timing matters that much. I think the obsession does.',
+    ],
+  },
+]
+
+/* ── resume ───────────────────────────────────────────────── */
+export const RESUME = {
+  experience: [
+    {
+      role: 'Electrical & Embedded Systems Intern',
+      org: 'Cosy Farms',
+      location: 'Mumbai, India',
+      period: 'Jan 2025 – Present',
+      points: [
+        'Designed STM32-based embedded control systems for automated indoor hydroponic farming',
+        'Implemented sensor fusion for real-time monitoring of CO₂, humidity, pH, and nutrient levels',
+        'Built data logging and alert systems reducing manual monitoring overhead by ~60%',
+        'Developed actuator control loops for lighting, irrigation, and climate management',
+      ],
+    },
+    {
+      role: 'Robotics Head',
+      org: 'IE Mechatronics · MIT Manipal',
+      location: 'Manipal, India',
+      period: '2024 – Present',
+      points: [
+        'Leading robotics division — workshops on PCB design, embedded systems, and kinematics',
+        'Mentoring 20+ junior students across project development and competition preparation',
+        'Organised inter-college robotics events and technical talk series',
+      ],
+    },
+    {
+      role: 'Senior Electronics Member',
+      org: 'Team Robomanipal',
+      location: 'Manipal, India',
+      period: '2022 – 2025',
+      points: [
+        'Designed and fabricated custom PCBs for STM32-based controllers across 3 competition seasons',
+        'Led embedded software for DD Robocon 2025 — vision-guided omnidirectional robot (AIR 22)',
+        'Implemented BLDC FOC motor control, depth camera integration, and inter-robot comms protocol',
+        'Contributed to sensor fusion pipeline achieving ±3 mm localisation accuracy under competition conditions',
+      ],
+    },
+  ],
+  education: {
+    degree: 'B.Tech · Mechatronics Engineering',
+    institution: 'MIT, MAHE · Manipal, India',
+    period: '2022 – 2026',
+    courses: ['Robotics & Automation', 'Embedded Systems', 'Control Systems', 'Machine Learning', 'CAD/CAM', 'IoT Systems'],
+  },
+  achievements: [
+    { title: 'AIR 22 · DD Robocon 2025', sub: 'National robotics championship · top 10%' },
+    { title: 'Patent Application Filed', sub: 'Tactile stimulation device · provisional application' },
+    { title: '2 Research Papers In Progress', sub: 'Soft robotics · embedded control systems' },
+    { title: 'GrabCAD Publication', sub: 'Quadruped robot design · 200+ downloads' },
+  ],
+  skills: [
+    { category: 'Embedded', items: ['STM32 / Embedded C', 'BLDC FOC Control', 'PCB Design · KiCad', 'UART / SPI / I2C / CAN', 'ROS 2'] },
+    { category: 'Mechanical', items: ['SolidWorks', 'ANSYS Structural', '3D Printing · FDM / SLA', 'Kinematics & Dynamics', 'GD&T'] },
+    { category: 'Software', items: ['Python', 'C / C++', 'Unity 3D · C#', 'OpenCV', 'MATLAB'] },
+    { category: 'Research', items: ['Sensor Fusion', 'Computer Vision', 'Soft Robotics', 'Control Theory', 'Machine Learning'] },
+  ],
+}

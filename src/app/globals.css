@@ -1,19 +1,41 @@
 @import "tailwindcss";
 
+/* ── Dark theme (default) ───────────────────────────────── */
 :root {
-  --bg:      #0d1117;
-  --bg2:     #161b22;
-  --surface: #21262d;
-  --border:  #30363d;
-  --border2: #444c56;
-  --green:   #3fb950;
-  --blue:    #58a6ff;
-  --orange:  #f78166;
-  --yellow:  #e3b341;
-  --purple:  #bc8cff;
-  --text:    #e6edf3;
-  --muted:   #7d8590;
-  --dimmed:  #484f58;
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --surface:   #21262d;
+  --border:    #30363d;
+  --border2:   #444c56;
+  --green:     #3fb950;
+  --blue:      #58a6ff;
+  --orange:    #f78166;
+  --yellow:    #e3b341;
+  --purple:    #bc8cff;
+  --text:      #e6edf3;
+  --muted:     #7d8590;
+  --dimmed:    #484f58;
+  --nav-bg:    rgba(13,17,23,0.85);
+  --overlay-bg:rgba(13,17,23,0.97);
+}
+
+/* ── Light theme ────────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg:        #ffffff;
+  --bg2:       #f6f8fa;
+  --surface:   #eaeef2;
+  --border:    #d0d7de;
+  --border2:   #afb8c1;
+  --green:     #1a7f37;
+  --blue:      #0969da;
+  --orange:    #cf222e;
+  --yellow:    #9a6700;
+  --purple:    #8250df;
+  --text:      #1f2328;
+  --muted:     #636c76;
+  --dimmed:    #8c959f;
+  --nav-bg:    rgba(255,255,255,0.88);
+  --overlay-bg:rgba(255,255,255,0.97);
 }
 
 @theme inline {
@@ -43,6 +65,7 @@ body {
   color: var(--text);
   overflow-x: hidden;
   font-family: var(--font-sora), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {

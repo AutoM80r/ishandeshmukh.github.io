@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
+import ThemeToggle from './ThemeToggle'
 
 const LINKS = [
   { href: '#home',    label: 'home'     },
@@ -46,7 +47,7 @@ export default function Navbar() {
       <motion.nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-[5vw] py-[14px] transition-all duration-300"
         style={{
-          background: 'rgba(13,17,23,0.85)',
+          background: 'var(--nav-bg)',
           backdropFilter: 'blur(14px)',
           borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
         }}
@@ -115,6 +116,8 @@ export default function Navbar() {
             open to collabs
           </div>
 
+          <ThemeToggle />
+
           {/* hamburger button — mobile only */}
           <button
             className="md:hidden flex flex-col gap-[5px] p-[6px]"
@@ -149,7 +152,7 @@ export default function Navbar() {
         {menuOpen && (
           <motion.div
             className="fixed inset-0 z-40 md:hidden flex flex-col"
-            style={{ background: 'rgba(13,17,23,0.97)', backdropFilter: 'blur(20px)', paddingTop: '70px' }}
+            style={{ background: 'var(--overlay-bg)', backdropFilter: 'blur(20px)', paddingTop: '70px' }}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

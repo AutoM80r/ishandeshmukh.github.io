@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import { Sora, JetBrains_Mono } from 'next/font/google'
+import ThemeProvider from '@/components/ThemeProvider'
 import './globals.css'
+
+/* Runs before React hydrates — prevents flash of wrong theme */
+const themeScript = `(function(){try{var s=localStorage.getItem('theme');if(s==='light'||s==='dark'){document.documentElement.setAttribute('data-theme',s);return;}var h=new Date().getHours();document.documentElement.setAttribute('data-theme',(h>=6&&h<18)?'light':'dark');}catch(e){}})();`
 
 const sora = Sora({
   subsets: ['latin'],
@@ -39,8 +43,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sora.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={`${sora.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   )
 }

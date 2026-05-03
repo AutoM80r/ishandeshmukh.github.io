@@ -66,13 +66,13 @@ export default function TerminalLoader({ onDone }: Props) {
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-[6vw]"
-          style={{ background: 'var(--bg)' }}
+          className="fixed inset-0 z-[9999]"
+          style={{ background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6vw' }}
           exit={{ opacity: 0, scale: 1.03 }}
           transition={{ duration: 0.6, ease: 'easeInOut' }}
         >
           <div
-            className="max-w-[680px] rounded-[6px] overflow-hidden"
+            className="w-full max-w-[680px] rounded-[6px] overflow-hidden"
             style={{ background: 'var(--bg2)', border: '1px solid var(--border)', boxShadow: '0 16px 64px rgba(0,0,0,0.6)' }}
           >
             {/* title bar */}

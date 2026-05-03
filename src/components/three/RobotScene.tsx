@@ -15,6 +15,7 @@ const M_GRIP_PAD = new THREE.MeshStandardMaterial({ color: '#131318', metalness:
 const M_BOLT     = new THREE.MeshStandardMaterial({ color: '#2e2e3c', metalness: 0.92, roughness: 0.08 })
 const M_FLOOR    = new THREE.MeshStandardMaterial({ color: '#0c0c18', metalness: 0.18, roughness: 0.82 })
 const M_PANEL    = new THREE.MeshStandardMaterial({ color: '#0a0a12', metalness: 0.95, roughness: 0.06 })
+const M_PLAT     = new THREE.MeshStandardMaterial({ color: '#2a2a36', metalness: 0.70, roughness: 0.30 })
 
 /* ── joints type ───────────────────────────────────────────── */
 interface Joints { base: number; shoulder: number; elbow: number; wrist: number }
@@ -23,9 +24,21 @@ interface Joints { base: number; shoulder: number; elbow: number; wrist: number 
 const POSES: Record<string, Joints> = {
   default: { base:  0.0,  shoulder: -0.45, elbow: 0.95,  wrist: -0.50 },
   reach:   { base:  0.7,  shoulder: -0.80, elbow: 1.30,  wrist: -0.55 },
-  pick:    { base: -0.4,  shoulder: -1.10, elbow: 1.55,  wrist:  0.20 },
+  /* pick: arm swings right (base=-0.4) and reaches forward toward camera */
+  pick:    { base: -0.4,  shoulder:  0.15, elbow: 1.25,  wrist: -1.30 },
   extend:  { base:  0.0,  shoulder: -0.10, elbow: 0.12,  wrist: -0.08 },
 }
+
+/*
+ * FK pre-computation for pick pose (arm group pos=(0,-1.18,0), scale=1.15):
+ *   shoulder(0.15) + elbow(1.25) → combined=1.40
+ *   elbow_waist  = (0, 1.7684, 0.1555)
+ *   wrist_waist  = (0, 1.8874, 0.8453)   combined=0.10
+ *   grip_waist   = (0, 2.0864, 0.8653)   arm_local=(0,2.3864,0.8653)
+ *   after base Y=-0.4 → arm_local=(0.337, 2.386, 0.797)
+ *   world ≈ (0.387, 1.564, 0.917)
+ */
+const PICK_WORLD = new THREE.Vector3(0.387, 1.35, 0.917)   // slightly below gripper tip
 
 /* ── wave greeting keyframes ───────────────────────────────── */
 const WAVE_KF = [
@@ -79,15 +92,13 @@ function AxisDiscs({ span = 0.44, r = 0.095 }: { span?: number; r?: number }) {
   )
 }
 
-/* ── single gripper finger ────────────────────────────────── */
+/* ── gripper finger ───────────────────────────────────────── */
 const PROX = 0.155
 const DIST = 0.185
 const MOUNT_R = 0.082
 
 function GripFinger({ angle, spread = 0 }: { angle: number; spread?: number }) {
-  /* spread: 0 = closed/default, 1 = fully open */
   const proxAngle = 0.28 + spread * 0.32
-
   return (
     <group rotation={[0, angle, 0]}>
       <group position={[0, -0.04, MOUNT_R]}>
@@ -129,7 +140,6 @@ function GripFinger({ angle, spread = 0 }: { angle: number; spread?: number }) {
   )
 }
 
-/* ── gripper assembly ─────────────────────────────────────── */
 function Gripper({ spread = 0 }: { spread?: number }) {
   const TAU3 = (Math.PI * 2) / 3
   return (
@@ -149,8 +159,8 @@ function Gripper({ spread = 0 }: { spread?: number }) {
           <cylinderGeometry args={[0.012, 0.012, 0.025, 10]} />
         </mesh>
       ))}
-      <GripFinger angle={0}       spread={spread} />
-      <GripFinger angle={TAU3}    spread={spread} />
+      <GripFinger angle={0}        spread={spread} />
+      <GripFinger angle={TAU3}     spread={spread} />
       <GripFinger angle={TAU3 * 2} spread={spread} />
     </group>
   )
@@ -170,86 +180,112 @@ function Ground() {
   )
 }
 
-/* ── pick object — sits on ground, gets "grabbed" and fades ─ */
-function PickObject({ pickKey }: { pickKey: number }) {
+/* ── pick platform + cube ─────────────────────────────────────
+   The cube sits on a small platform at PICK_WORLD.
+   gripperPosRef is updated each frame by IndustrialArm.
+   When gripper gets within GRAB_DIST of the cube, the cube fades.
+─────────────────────────────────────────────────────────────── */
+const GRAB_DIST = 0.32
+
+function PickObject({
+  pickKey,
+  gripperPosRef,
+}: {
+  pickKey: number
+  gripperPosRef: React.MutableRefObject<THREE.Vector3>
+}) {
   const groupRef = useRef<THREE.Group>(null!)
-  const elapsed  = useRef(0)
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#ff7020', emissive: '#ff3000', emissiveIntensity: 0.35,
+  const grabbed  = useRef(false)
+  const fadeProg = useRef(0)
+
+  const cubeMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#ff7020', emissive: '#ff3000', emissiveIntensity: 0.40,
     metalness: 0.15, roughness: 0.55, transparent: true, opacity: 1,
   }), [])
   const glowMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#ff7020', transparent: true, opacity: 0.18, side: THREE.DoubleSide,
+    color: '#ff7020', transparent: true, opacity: 0.20, side: THREE.DoubleSide,
   }), [])
 
   useEffect(() => {
-    elapsed.current = 0
-    mat.opacity = 1
-    mat.emissiveIntensity = 0.35
-    glowMat.opacity = 0.18
+    grabbed.current  = false
+    fadeProg.current = 0
+    cubeMat.opacity  = 1
+    cubeMat.emissiveIntensity = 0.40
+    glowMat.opacity  = 0.20
     if (groupRef.current) groupRef.current.scale.setScalar(1)
-  }, [pickKey, mat, glowMat])
+  }, [pickKey, cubeMat, glowMat])
 
   useFrame((_, delta) => {
-    elapsed.current += delta
-    const t = elapsed.current
-
-    /* pulse glow before being picked */
-    if (t < 2.0) {
-      glowMat.opacity = 0.10 + Math.sin(t * 4) * 0.08
+    if (grabbed.current) {
+      /* fade out after grab */
+      fadeProg.current = Math.min(1, fadeProg.current + delta / 0.55)
+      const p = fadeProg.current
+      cubeMat.opacity = 1 - p
+      glowMat.opacity = 0.20 * (1 - p)
+      cubeMat.emissiveIntensity = 0.40 * (1 - p)
+      if (groupRef.current) groupRef.current.scale.setScalar(1 + p * 0.7)
+      return
     }
 
-    /* fade + scale out once gripper arrives (~2.2 s) */
-    if (t > 2.2) {
-      const p = Math.min(1, (t - 2.2) / 0.65)
-      mat.opacity = 1 - p
-      glowMat.opacity = 0.18 * (1 - p)
-      mat.emissiveIntensity = 0.35 * (1 - p)
-      if (groupRef.current) groupRef.current.scale.setScalar(1 + p * 0.6)
-    }
+    /* pulse glow while waiting */
+    const t = performance.now() / 1000
+    glowMat.opacity = 0.12 + Math.sin(t * 3.5) * 0.08
+
+    /* check if gripper has arrived */
+    const dist = gripperPosRef.current.distanceTo(PICK_WORLD)
+    if (dist < GRAB_DIST) grabbed.current = true
   })
 
-  /* position estimated from pick FK: base=-0.4, arm reaches ~(-0.3, ground, 0.9) */
   return (
-    <group ref={groupRef} position={[-0.30, -1.10, 0.90]}>
-      {/* main cube */}
-      <mesh>
-        <boxGeometry args={[0.11, 0.11, 0.11]} />
-        <primitive object={mat} attach="material" />
+    <group ref={groupRef} position={PICK_WORLD}>
+      {/* platform pedestal */}
+      <mesh material={M_PLAT} position={[0, -0.20, 0]}>
+        <boxGeometry args={[0.38, 0.25, 0.38]} />
       </mesh>
-      {/* glow disc on ground */}
-      <mesh position={[0, -0.056, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.06, 0.18, 24]} />
+      <mesh material={M_PLAT} position={[0, -0.34, 0]}>
+        <cylinderGeometry args={[0.14, 0.18, 0.08, 20]} />
+      </mesh>
+
+      {/* orange cube */}
+      <mesh>
+        <boxGeometry args={[0.115, 0.115, 0.115]} />
+        <primitive object={cubeMat} attach="material" />
+      </mesh>
+
+      {/* pulsing glow ring */}
+      <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.07, 0.20, 24]} />
         <primitive object={glowMat} attach="material" />
       </mesh>
-      {/* small point light so cube illuminates the ground */}
-      <pointLight color="#ff6010" intensity={0.6} distance={1.2} />
+
+      <pointLight color="#ff6010" intensity={0.7} distance={1.4} />
     </group>
   )
 }
 
 /* ── arm joints + links ───────────────────────────────────── */
 function IndustrialArm({
-  targets, autoMode, gripSpread,
+  targets,
+  autoMode,
+  gripSpread,
+  gripperPosRef,
 }: {
-  targets: Joints; autoMode: boolean; gripSpread: number
+  targets: Joints
+  autoMode: boolean
+  gripSpread: number
+  gripperPosRef: React.MutableRefObject<THREE.Vector3>
 }) {
   const waistRef    = useRef<THREE.Group>(null!)
   const shoulderRef = useRef<THREE.Group>(null!)
   const elbowRef    = useRef<THREE.Group>(null!)
   const wristRef    = useRef<THREE.Group>(null!)
-  const gripperRef  = useRef<THREE.Group>(null!)
+  const gripperRef  = useRef<THREE.Group>(null!)   // for getWorldPosition
   const cur         = useRef<Joints>({ ...POSES.default })
   const animTime    = useRef(0)
   const curSpread   = useRef(0)
 
   useFrame((_, delta) => {
-    /* lerp gripper spread */
     curSpread.current = THREE.MathUtils.lerp(curSpread.current, gripSpread, 0.07)
-    if (gripperRef.current) {
-      /* spread is applied via GripFinger re-render, not here — force update skipped;
-         instead Gripper is rendered with spread prop in JSX below */
-    }
 
     let tgt: Joints
 
@@ -257,7 +293,6 @@ function IndustrialArm({
       animTime.current += delta
       const t = animTime.current
       const kf = WAVE_KF
-
       if (t < kf[kf.length - 1].t) {
         tgt = kf[kf.length - 1].j
         for (let i = 0; i < kf.length - 1; i++) {
@@ -286,6 +321,11 @@ function IndustrialArm({
     shoulderRef.current.rotation.x = tgt.shoulder
     elbowRef.current.rotation.x    = tgt.elbow
     wristRef.current.rotation.x    = tgt.wrist
+
+    /* update shared gripper world position */
+    if (gripperRef.current) {
+      gripperRef.current.getWorldPosition(gripperPosRef.current)
+    }
   })
 
   const spread = curSpread.current
@@ -332,17 +372,15 @@ function IndustrialArm({
             <mesh material={M_LITE} position={[0, 0.06, 0]}>
               <boxGeometry args={[0.28, 0.10, 0.22]} />
             </mesh>
-            {/* upper arm body */}
             <mesh material={M_BODY} position={[0, 0.56, 0]}>
               <boxGeometry args={[0.195, 0.88, 0.185]} />
             </mesh>
-            {/* "ishan" carved panel — dark OLED-style recess */}
-            <mesh material={M_PANEL} position={[0, 0.56, 0.093]}>
-              <boxGeometry args={[0.148, 0.80, 0.014]} />
-            </mesh>
-            {/* thin border frame around panel */}
+            {/* carved ishan panel */}
             <mesh material={M_DARK} position={[0, 0.56, 0.094]}>
               <boxGeometry args={[0.158, 0.82, 0.008]} />
+            </mesh>
+            <mesh material={M_PANEL} position={[0, 0.56, 0.093]}>
+              <boxGeometry args={[0.148, 0.80, 0.014]} />
             </mesh>
             <mesh material={M_DARK} position={[0, 0.11, 0]}>
               <boxGeometry args={[0.197, 0.036, 0.187]} />
@@ -350,8 +388,6 @@ function IndustrialArm({
             <mesh material={M_DARK} position={[0, 1.00, 0]}>
               <boxGeometry args={[0.197, 0.036, 0.187]} />
             </mesh>
-
-            {/* "ishan" carved text — green on dark panel */}
             <Text
               position={[0, 0.56, 0.101]}
               fontSize={0.046}
@@ -373,7 +409,6 @@ function IndustrialArm({
               <Ring r={0.15} thick={0.026} />
               <AxisDiscs span={0.32} r={0.082} />
 
-              {/* ══ ELBOW X ══ */}
               <group ref={elbowRef}>
                 <mesh material={M_BODY} position={[0, 0.36, 0]}>
                   <cylinderGeometry args={[0.092, 0.128, 0.62, 24]} />
@@ -392,11 +427,11 @@ function IndustrialArm({
                   </mesh>
                   <Ring r={0.11} thick={0.022} />
 
-                  {/* ══ WRIST X ══ */}
                   <group ref={wristRef}>
                     <mesh material={M_BODY} position={[0, 0.09, 0]}>
                       <cylinderGeometry args={[0.078, 0.078, 0.12, 24]} />
                     </mesh>
+                    {/* gripper — ref here for world position tracking */}
                     <group ref={gripperRef} position={[0, 0.20, 0]}>
                       <Gripper spread={spread} />
                     </group>
@@ -443,12 +478,15 @@ function Slider({ label, value, min, max, onChange }: {
 
 /* ── scene ────────────────────────────────────────────────── */
 export default function RobotScene() {
-  const [joints, setJoints]       = useState<Joints>({ ...POSES.default })
-  const [activePreset, setActive] = useState('default')
-  const [autoMode, setAutoMode]   = useState(true)
-  const [pickKey, setPickKey]     = useState(0)
+  const [joints, setJoints]         = useState<Joints>({ ...POSES.default })
+  const [activePreset, setActive]   = useState('default')
+  const [autoMode, setAutoMode]     = useState(true)
+  const [pickKey, setPickKey]       = useState(0)
   const [pickActive, setPickActive] = useState(false)
   const [gripSpread, setGripSpread] = useState(0)
+
+  /* shared ref — IndustrialArm writes gripper world pos every frame */
+  const gripperPosRef = useRef(new THREE.Vector3())
 
   function applyPreset(name: string) {
     setJoints({ ...POSES[name] })
@@ -456,12 +494,11 @@ export default function RobotScene() {
     setAutoMode(false)
 
     if (name === 'pick') {
-      /* sequence: open gripper → arm moves → close → pick object disappears */
       setPickKey(k => k + 1)
       setPickActive(true)
-      setGripSpread(0.9)                            // open gripper
-      setTimeout(() => setGripSpread(0), 2300)      // close when near object
-      setTimeout(() => setPickActive(false), 3800)  // object gone, gripper closed
+      setGripSpread(0.9)                          // open gripper
+      setTimeout(() => setGripSpread(0), 2400)    // close when near object
+      setTimeout(() => setPickActive(false), 5000)// cleanup after fade completes
     } else {
       setPickActive(false)
       setGripSpread(0)
@@ -489,8 +526,7 @@ export default function RobotScene() {
 
       {/* mode label */}
       <div style={{
-        padding: '5px 14px 4px',
-        background: 'var(--bg)',
+        padding: '5px 14px 4px', background: 'var(--bg)',
         borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: 6,
         fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem',
@@ -516,8 +552,19 @@ export default function RobotScene() {
           <pointLight position={[0, -0.5, 2]} color="#3fb950" intensity={1.2} distance={5} />
 
           <Ground />
-          {pickActive && <PickObject key={pickKey} pickKey={pickKey} />}
-          <IndustrialArm targets={joints} autoMode={autoMode} gripSpread={gripSpread} />
+          {pickActive && (
+            <PickObject
+              key={pickKey}
+              pickKey={pickKey}
+              gripperPosRef={gripperPosRef}
+            />
+          )}
+          <IndustrialArm
+            targets={joints}
+            autoMode={autoMode}
+            gripSpread={gripSpread}
+            gripperPosRef={gripperPosRef}
+          />
           <OrbitControls enableZoom={false} enablePan={false} minPolarAngle={0.3} maxPolarAngle={Math.PI * 0.58} />
           <Environment preset="warehouse" environmentIntensity={0.4} />
         </Canvas>

@@ -66,7 +66,7 @@ export default function TerminalLoader({ onDone }: Props) {
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex flex-col justify-center px-[6vw]"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-[6vw]"
           style={{ background: 'var(--bg)' }}
           exit={{ opacity: 0, scale: 1.03 }}
           transition={{ duration: 0.6, ease: 'easeInOut' }}

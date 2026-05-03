@@ -354,11 +354,12 @@ function IndustrialArm({
             {/* "ishan" carved text — green on dark panel */}
             <Text
               position={[0, 0.56, 0.101]}
-              fontSize={0.068}
+              fontSize={0.046}
               color="#3fb950"
               anchorX="center"
               anchorY="middle"
-              letterSpacing={0.18}
+              letterSpacing={0.04}
+              maxWidth={0.14}
               characters="ishan"
             >
               ishan

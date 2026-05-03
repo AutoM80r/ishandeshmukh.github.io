@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Environment, Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -13,6 +13,37 @@ const M_BASE  = new THREE.MeshStandardMaterial({ color: '#111119', metalness: 0.
 const M_GRIP  = new THREE.MeshStandardMaterial({ color: '#1e1e28', metalness: 0.78, roughness: 0.22 })
 const M_GRIP_PAD = new THREE.MeshStandardMaterial({ color: '#131318', metalness: 0.55, roughness: 0.50 })
 const M_BOLT  = new THREE.MeshStandardMaterial({ color: '#2e2e3c', metalness: 0.92, roughness: 0.08 })
+const M_FLOOR = new THREE.MeshStandardMaterial({ color: '#0c0c18', metalness: 0.18, roughness: 0.82 })
+
+/* ── joints type ───────────────────────────────────────────── */
+interface Joints { base: number; shoulder: number; elbow: number; wrist: number }
+
+/* ── poses ─────────────────────────────────────────────────── */
+const POSES: Record<string, Joints> = {
+  default: { base:  0.0,  shoulder: -0.45, elbow: 0.95,  wrist: -0.50 },
+  reach:   { base:  0.7,  shoulder: -0.80, elbow: 1.30,  wrist: -0.55 },
+  pick:    { base: -0.4,  shoulder: -1.10, elbow: 1.55,  wrist:  0.20 },
+  extend:  { base:  0.0,  shoulder: -0.10, elbow: 0.12,  wrist: -0.08 },
+}
+
+/* ── wave greeting keyframes ───────────────────────────────── */
+const WAVE_KF = [
+  { t: 0.0, j: { base:  0.00, shoulder: -0.45, elbow: 0.95, wrist: -0.50 } },
+  { t: 1.2, j: { base:  0.00, shoulder: -1.05, elbow: 0.48, wrist:  0.12 } },
+  { t: 2.0, j: { base:  0.55, shoulder: -1.05, elbow: 0.48, wrist:  0.12 } },
+  { t: 2.8, j: { base: -0.55, shoulder: -1.05, elbow: 0.48, wrist:  0.12 } },
+  { t: 3.6, j: { base:  0.55, shoulder: -1.05, elbow: 0.48, wrist:  0.12 } },
+  { t: 4.4, j: { base: -0.55, shoulder: -1.05, elbow: 0.48, wrist:  0.12 } },
+  { t: 5.6, j: { base:  0.00, shoulder: -0.45, elbow: 0.95, wrist: -0.50 } },
+]
+const WAVE_HOLD = 7.0
+
+function smoothstep(t: number) { return t * t * (3 - 2 * t) }
+
+function lerpJ(a: Joints, b: Joints, t: number): Joints {
+  const L = THREE.MathUtils.lerp
+  return { base: L(a.base, b.base, t), shoulder: L(a.shoulder, b.shoulder, t), elbow: L(a.elbow, b.elbow, t), wrist: L(a.wrist, b.wrist, t) }
+}
 
 /* ── reusable joint-ring ──────────────────────────────────── */
 function Ring({ r = 0.22, thick = 0.036 }: { r?: number; thick?: number }) {
@@ -50,21 +81,17 @@ const MOUNT_R = 0.082
 function GripFinger({ angle }: { angle: number }) {
   return (
     <group rotation={[0, angle, 0]}>
-      {/* mount point at hub edge */}
       <group position={[0, -0.04, MOUNT_R]}>
-        {/* proximal link — leans outward */}
         <group rotation={[0.36, 0, 0]}>
           <mesh material={M_GRIP} position={[0, -PROX / 2, 0]}>
             <boxGeometry args={[0.027, PROX, 0.022]} />
           </mesh>
-          {/* side ridges on proximal */}
           <mesh material={M_BOLT} position={[-0.014, -PROX / 2, 0]}>
             <boxGeometry args={[0.005, PROX * 0.85, 0.018]} />
           </mesh>
           <mesh material={M_BOLT} position={[0.014, -PROX / 2, 0]}>
             <boxGeometry args={[0.005, PROX * 0.85, 0.018]} />
           </mesh>
-          {/* knuckle joint disc */}
           <mesh material={M_BOLT} position={[0, -PROX, 0]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.015, 0.015, 0.040, 14]} />
           </mesh>
@@ -74,19 +101,15 @@ function GripFinger({ angle }: { angle: number }) {
           <mesh material={M_GRIP} position={[0.022, -PROX, 0]}>
             <boxGeometry args={[0.008, 0.024, 0.024]} />
           </mesh>
-
-          {/* distal link — curves inward (back toward gripper centre) */}
           <group position={[0, -PROX, 0]} rotation={[-0.50, 0, 0]}>
             <mesh material={M_GRIP} position={[0, -DIST / 2, 0]}>
               <boxGeometry args={[0.025, DIST, 0.020]} />
             </mesh>
-            {/* serrated inner pads (face closest to arm centre = +Z face) */}
             {Array.from({ length: 6 }).map((_, j) => (
               <mesh key={j} material={M_GRIP_PAD} position={[0, -0.010 - j * 0.028, 0.012]}>
                 <boxGeometry args={[0.023, 0.022, 0.007]} />
               </mesh>
             ))}
-            {/* finger tip */}
             <mesh material={M_GRIP} position={[0, -DIST + 0.010, 0]}>
               <boxGeometry args={[0.020, 0.032, 0.018]} />
             </mesh>
@@ -102,26 +125,21 @@ function Gripper() {
   const TAU3 = (Math.PI * 2) / 3
   return (
     <group>
-      {/* dark cylindrical hub */}
       <mesh material={M_GRIP}>
         <cylinderGeometry args={[0.096, 0.096, 0.13, 28]} />
       </mesh>
-      {/* top cap */}
       <mesh material={M_GRIP} position={[0, 0.08, 0]}>
         <cylinderGeometry args={[0.075, 0.096, 0.04, 28]} />
       </mesh>
-      {/* bottom plate */}
       <mesh material={M_GRIP} position={[0, -0.08, 0]}>
         <cylinderGeometry args={[0.105, 0.096, 0.04, 28]} />
       </mesh>
-      {/* hub detail circles */}
       {[0, TAU3, TAU3 * 2].map((a, i) => (
         <mesh key={i} material={M_BOLT}
           position={[Math.sin(a) * 0.058, 0.03, Math.cos(a) * 0.058]}>
           <cylinderGeometry args={[0.012, 0.012, 0.025, 10]} />
         </mesh>
       ))}
-      {/* 3 fingers */}
       <GripFinger angle={0} />
       <GripFinger angle={TAU3} />
       <GripFinger angle={TAU3 * 2} />
@@ -129,27 +147,71 @@ function Gripper() {
   )
 }
 
-/* ── arm joints + links ───────────────────────────────────── */
-interface Joints { base: number; shoulder: number; elbow: number; wrist: number }
+/* ── Gazebo-style ground ───────────────────────────────────── */
+function Ground() {
+  const grid = useMemo(() => {
+    const g = new THREE.GridHelper(14, 28, '#252535', '#1a1a28')
+    return g
+  }, [])
+  return (
+    <>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.186, 0]} receiveShadow>
+        <planeGeometry args={[14, 14]} />
+        <primitive object={M_FLOOR} attach="material" />
+      </mesh>
+      <primitive object={grid} position={[0, -1.183, 0]} />
+    </>
+  )
+}
 
-function IndustrialArm({ targets }: { targets: Joints }) {
+/* ── arm joints + links ───────────────────────────────────── */
+function IndustrialArm({ targets, autoMode }: { targets: Joints; autoMode: boolean }) {
   const waistRef    = useRef<THREE.Group>(null!)
   const shoulderRef = useRef<THREE.Group>(null!)
   const elbowRef    = useRef<THREE.Group>(null!)
   const wristRef    = useRef<THREE.Group>(null!)
   const cur         = useRef<Joints>({ ...POSES.default })
+  const animTime    = useRef(0)
 
-  useFrame(() => {
-    const s = 0.088
-    const L = (a: number, b: number) => THREE.MathUtils.lerp(a, b, s)
-    cur.current.base     = L(cur.current.base,     targets.base)
-    cur.current.shoulder = L(cur.current.shoulder, targets.shoulder)
-    cur.current.elbow    = L(cur.current.elbow,    targets.elbow)
-    cur.current.wrist    = L(cur.current.wrist,    targets.wrist)
-    waistRef.current.rotation.y    = cur.current.base
-    shoulderRef.current.rotation.x = cur.current.shoulder
-    elbowRef.current.rotation.x    = cur.current.elbow
-    wristRef.current.rotation.x    = cur.current.wrist
+  useFrame((_, delta) => {
+    let tgt: Joints
+
+    if (autoMode) {
+      animTime.current += delta
+      const t = animTime.current
+      const kf = WAVE_KF
+
+      if (t < kf[kf.length - 1].t) {
+        tgt = kf[kf.length - 1].j
+        for (let i = 0; i < kf.length - 1; i++) {
+          if (t >= kf[i].t && t < kf[i + 1].t) {
+            const alpha = smoothstep((t - kf[i].t) / (kf[i + 1].t - kf[i].t))
+            tgt = lerpJ(kf[i].j, kf[i + 1].j, alpha)
+            break
+          }
+        }
+      } else {
+        /* idle sway after greeting */
+        const s = t - WAVE_HOLD
+        tgt = { ...POSES.default, base: Math.sin(s * 0.38) * 0.12 }
+      }
+
+      cur.current = tgt
+    } else {
+      animTime.current = 0
+      const s = 0.088
+      const L = (a: number, b: number) => THREE.MathUtils.lerp(a, b, s)
+      cur.current.base     = L(cur.current.base,     targets.base)
+      cur.current.shoulder = L(cur.current.shoulder, targets.shoulder)
+      cur.current.elbow    = L(cur.current.elbow,    targets.elbow)
+      cur.current.wrist    = L(cur.current.wrist,    targets.wrist)
+      tgt = cur.current
+    }
+
+    waistRef.current.rotation.y    = tgt.base
+    shoulderRef.current.rotation.x = tgt.shoulder
+    elbowRef.current.rotation.x    = tgt.elbow
+    wristRef.current.rotation.x    = tgt.wrist
   })
 
   return (
@@ -175,7 +237,6 @@ function IndustrialArm({ targets }: { targets: Joints }) {
           <cylinderGeometry args={[0.22, 0.26, 0.26, 36]} />
         </mesh>
 
-        {/* shoulder U-fork */}
         <group position={[0, 0.26, 0]}>
           <mesh material={M_BODY} position={[-0.17, 0.24, 0]}>
             <boxGeometry args={[0.098, 0.52, 0.21]} />
@@ -195,8 +256,6 @@ function IndustrialArm({ targets }: { targets: Joints }) {
             <mesh material={M_LITE} position={[0, 0.06, 0]}>
               <boxGeometry args={[0.28, 0.10, 0.22]} />
             </mesh>
-
-            {/* UPPER ARM — "ishan" engraved on front face */}
             <mesh material={M_BODY} position={[0, 0.56, 0]}>
               <boxGeometry args={[0.195, 0.88, 0.185]} />
             </mesh>
@@ -209,8 +268,6 @@ function IndustrialArm({ targets }: { targets: Joints }) {
             <mesh material={M_DARK} position={[0, 1.00, 0]}>
               <boxGeometry args={[0.197, 0.036, 0.187]} />
             </mesh>
-
-            {/* "ishan" label on the face strip */}
             <Text
               position={[0, 0.56, 0.102]}
               fontSize={0.058}
@@ -255,7 +312,6 @@ function IndustrialArm({ targets }: { targets: Joints }) {
                     <mesh material={M_BODY} position={[0, 0.09, 0]}>
                       <cylinderGeometry args={[0.078, 0.078, 0.12, 24]} />
                     </mesh>
-                    {/* ══ GRIPPER ══ */}
                     <group position={[0, 0.20, 0]}>
                       <Gripper />
                     </group>
@@ -268,14 +324,6 @@ function IndustrialArm({ targets }: { targets: Joints }) {
       </group>
     </group>
   )
-}
-
-/* ── poses ────────────────────────────────────────────────── */
-const POSES: Record<string, Joints> = {
-  default: { base:  0.0,  shoulder: -0.45, elbow: 0.95,  wrist: -0.50 },
-  reach:   { base:  0.7,  shoulder: -0.80, elbow: 1.30,  wrist: -0.55 },
-  pick:    { base: -0.4,  shoulder: -1.10, elbow: 1.55,  wrist:  0.20 },
-  extend:  { base:  0.0,  shoulder: -0.10, elbow: 0.12,  wrist: -0.08 },
 }
 
 /* ── custom slider ────────────────────────────────────────── */
@@ -312,16 +360,50 @@ function Slider({ label, value, min, max, onChange }: {
 export default function RobotScene() {
   const [joints, setJoints]       = useState<Joints>({ ...POSES.default })
   const [activePreset, setActive] = useState('default')
+  const [autoMode, setAutoMode]   = useState(true)
 
-  function applyPreset(name: string) { setJoints({ ...POSES[name] }); setActive(name) }
-  function setJ(k: keyof Joints, v: number) { setJoints(p => ({ ...p, [k]: v })); setActive('') }
+  function applyPreset(name: string) {
+    setJoints({ ...POSES[name] })
+    setActive(name)
+    setAutoMode(false)
+  }
+
+  function resetToAuto() {
+    setJoints({ ...POSES.default })
+    setActive('default')
+    setAutoMode(true)
+  }
+
+  function setJ(k: keyof Joints, v: number) {
+    setJoints(p => ({ ...p, [k]: v }))
+    setActive('')
+    setAutoMode(false)
+  }
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg2)' }}>
 
+      {/* mode label */}
+      <div style={{
+        padding: '5px 14px 4px',
+        background: 'var(--bg)',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: 6,
+        fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem',
+        color: autoMode ? 'var(--green)' : 'var(--blue)',
+        flexShrink: 0,
+      }}>
+        <span style={{
+          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+          background: autoMode ? 'var(--green)' : 'var(--blue)',
+          boxShadow: autoMode ? '0 0 6px rgba(63,185,80,0.6)' : '0 0 6px rgba(88,166,255,0.6)',
+        }} />
+        {autoMode ? 'greeting · touch any slider to take control' : 'manual control'}
+      </div>
+
       <div style={{ flex: 1, minHeight: 0 }}>
         <Canvas
-          camera={{ position: [3.6, 0.7, 3.6], fov: 46 }}
+          camera={{ position: [3.4, 0.4, 3.4], fov: 50 }}
           gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
         >
           <ambientLight intensity={0.55} />
@@ -329,7 +411,8 @@ export default function RobotScene() {
           <directionalLight position={[-4, 3, -2]} intensity={0.45} color="#c0d8ff" />
           <pointLight position={[0, -0.5, 2]} color="#3fb950" intensity={1.2} distance={5} />
 
-          <IndustrialArm targets={joints} />
+          <Ground />
+          <IndustrialArm targets={joints} autoMode={autoMode} />
           <OrbitControls enableZoom={false} enablePan={false} minPolarAngle={0.3} maxPolarAngle={Math.PI * 0.58} />
           <Environment preset="warehouse" environmentIntensity={0.4} />
         </Canvas>
@@ -341,17 +424,19 @@ export default function RobotScene() {
             <button key={name} onClick={() => applyPreset(name)} style={{
               fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', padding: '3px 9px',
               borderRadius: 4, cursor: 'pointer', transition: 'all 0.15s',
-              border: `1px solid ${activePreset === name ? 'var(--green)' : 'var(--border)'}`,
-              background: activePreset === name ? 'rgba(63,185,80,0.12)' : 'var(--surface)',
-              color: activePreset === name ? 'var(--green)' : 'var(--muted)',
+              border: `1px solid ${activePreset === name && !autoMode ? 'var(--green)' : 'var(--border)'}`,
+              background: activePreset === name && !autoMode ? 'rgba(63,185,80,0.12)' : 'var(--surface)',
+              color: activePreset === name && !autoMode ? 'var(--green)' : 'var(--muted)',
             }}>
               {name}
             </button>
           ))}
-          <button onClick={() => applyPreset('default')} style={{
+          <button onClick={resetToAuto} style={{
             fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', padding: '3px 9px',
             borderRadius: 4, cursor: 'pointer', marginLeft: 'auto',
-            border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--muted)',
+            border: `1px solid ${autoMode ? 'var(--green)' : 'var(--border)'}`,
+            background: autoMode ? 'rgba(63,185,80,0.12)' : 'var(--surface)',
+            color: autoMode ? 'var(--green)' : 'var(--muted)',
           }}>
             reset
           </button>

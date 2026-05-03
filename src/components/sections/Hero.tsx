@@ -140,7 +140,7 @@ export default function Hero() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 4.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="w-full max-w-[440px] aspect-square rounded-[8px] overflow-hidden" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+        <div className="w-full max-w-[460px] rounded-[8px] overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
           <RobotScene />
         </div>
       </motion.div>

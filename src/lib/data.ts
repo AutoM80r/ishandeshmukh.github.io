@@ -147,10 +147,9 @@ export const PROJECTS: Project[] = [
 ]
 
 export const VIDEOS = [
-  { src: '/videos/clip1.mp4', title: 'Robocon Robot — Task Run', sub: 'DD Robocon 2025 · field test' },
-  { src: '/videos/clip2.mp4', title: 'Robocon Robot — Mechanism Demo', sub: 'DD Robocon 2025 · arm + drum' },
-  { src: '/videos/clip3.mp4', title: 'Robocon Robot — Arena Test', sub: 'DD Robocon 2025 · full run' },
-  { src: '/videos/clip4.mp4', title: 'Robocon Robot — Competition', sub: 'DD Robocon 2025 · nationals' },
+  { src: '/videos/clip1.mp4', title: 'Robocon Robot — Task Run', sub: 'DD Robocon 2024 · field test' },
+  { src: '/videos/clip2.mp4', title: 'Robocon Robot — Mechanism Demo', sub: 'DD Robocon 2024 · arm + drum' },
+  { src: '/videos/clip3.mp4', title: 'Robocon Robot — Arena Test', sub: 'DD Robocon 2024 · full run' },
 ]
 
 export const PROJECT_DETAILS: ProjectDetail[] = [

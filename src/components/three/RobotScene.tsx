@@ -313,7 +313,7 @@ function IndustrialArm({
   const spread = curSpread.current
 
   return (
-    <group position={[0, -1.18, 0]} scale={1.15}>
+    <group position={[0, -1.18, 0]} scale={0.95}>
 
       {/* BASE */}
       <mesh material={M_BASE}>
@@ -565,7 +565,7 @@ export default function RobotScene() {
         </div>
 
         <Canvas
-          camera={{ position: [2.8, 0.6, 3.2], fov: 50 }}
+          camera={{ position: [3.2, 0.0, 3.8], fov: 54 }}
           gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
         >
           <ambientLight intensity={0.9} />

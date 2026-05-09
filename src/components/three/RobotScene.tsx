@@ -5,17 +5,20 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Environment, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-/* ── materials ─────────────────────────────────────────────── */
-const M_BODY     = new THREE.MeshStandardMaterial({ color: '#d0d0d4', metalness: 0.28, roughness: 0.44 })
-const M_LITE     = new THREE.MeshStandardMaterial({ color: '#e4e4e8', metalness: 0.40, roughness: 0.28 })
-const M_DARK     = new THREE.MeshStandardMaterial({ color: '#1c1c26', metalness: 0.90, roughness: 0.10 })
-const M_BASE     = new THREE.MeshStandardMaterial({ color: '#111119', metalness: 0.82, roughness: 0.18 })
-const M_GRIP     = new THREE.MeshStandardMaterial({ color: '#1e1e28', metalness: 0.78, roughness: 0.22 })
-const M_GRIP_PAD = new THREE.MeshStandardMaterial({ color: '#131318', metalness: 0.55, roughness: 0.50 })
-const M_BOLT     = new THREE.MeshStandardMaterial({ color: '#2e2e3c', metalness: 0.92, roughness: 0.08 })
-const M_FLOOR    = new THREE.MeshStandardMaterial({ color: '#0c0c18', metalness: 0.18, roughness: 0.82 })
+const R2D = 180 / Math.PI
+const D2R = Math.PI / 180
+
+/* ── materials (white industrial arm) ─────────────────────── */
+const M_BODY     = new THREE.MeshStandardMaterial({ color: '#f2f2f2', metalness: 0.10, roughness: 0.38 })
+const M_LITE     = new THREE.MeshStandardMaterial({ color: '#ffffff', metalness: 0.18, roughness: 0.25 })
+const M_DARK     = new THREE.MeshStandardMaterial({ color: '#1a1a22', metalness: 0.92, roughness: 0.08 })
+const M_BASE     = new THREE.MeshStandardMaterial({ color: '#111111', metalness: 0.85, roughness: 0.15 })
+const M_GRIP     = new THREE.MeshStandardMaterial({ color: '#1e1e1e', metalness: 0.80, roughness: 0.22 })
+const M_GRIP_PAD = new THREE.MeshStandardMaterial({ color: '#2e2e2e', metalness: 0.55, roughness: 0.50 })
+const M_BOLT     = new THREE.MeshStandardMaterial({ color: '#3a3a3a', metalness: 0.92, roughness: 0.08 })
+const M_FLOOR    = new THREE.MeshStandardMaterial({ color: '#ececec', metalness: 0.02, roughness: 0.95 })
 const M_PANEL    = new THREE.MeshStandardMaterial({ color: '#0a0a12', metalness: 0.95, roughness: 0.06 })
-const M_PLAT     = new THREE.MeshStandardMaterial({ color: '#2a2a36', metalness: 0.70, roughness: 0.30 })
+const M_PLAT     = new THREE.MeshStandardMaterial({ color: '#888898', metalness: 0.65, roughness: 0.35 })
 
 /* ── joints type ───────────────────────────────────────────── */
 interface Joints { base: number; shoulder: number; elbow: number; wrist: number }
@@ -24,21 +27,19 @@ interface Joints { base: number; shoulder: number; elbow: number; wrist: number 
 const POSES: Record<string, Joints> = {
   default: { base:  0.0,  shoulder: -0.45, elbow: 0.95,  wrist: -0.50 },
   reach:   { base:  0.7,  shoulder: -0.80, elbow: 1.30,  wrist: -0.55 },
-  /* pick: arm swings right (base=-0.4) and reaches forward toward camera */
   pick:    { base: -0.4,  shoulder:  0.15, elbow: 1.25,  wrist: -1.30 },
   extend:  { base:  0.0,  shoulder: -0.10, elbow: 0.12,  wrist: -0.08 },
 }
 
-/*
- * FK pre-computation for pick pose (arm group pos=(0,-1.18,0), scale=1.15):
- *   shoulder(0.15) + elbow(1.25) → combined=1.40
- *   elbow_waist  = (0, 1.7684, 0.1555)
- *   wrist_waist  = (0, 1.8874, 0.8453)   combined=0.10
- *   grip_waist   = (0, 2.0864, 0.8653)   arm_local=(0,2.3864,0.8653)
- *   after base Y=-0.4 → arm_local=(0.337, 2.386, 0.797)
- *   world ≈ (0.387, 1.564, 0.917)
- */
-const PICK_WORLD = new THREE.Vector3(0.387, 1.35, 0.917)   // slightly below gripper tip
+const PICK_WORLD = new THREE.Vector3(0.387, 1.35, 0.917)
+const GRAB_DIST  = 0.32
+
+const PRESET_COLORS: Record<string, string> = {
+  default: '#3fb950',
+  reach:   '#58a6ff',
+  pick:    '#f78166',
+  extend:  '#e3b341',
+}
 
 /* ── wave greeting keyframes ───────────────────────────────── */
 const WAVE_KF = [
@@ -64,7 +65,7 @@ function lerpJ(a: Joints, b: Joints, t: number): Joints {
   }
 }
 
-/* ── reusable joint-ring ──────────────────────────────────── */
+/* ── joint ring ───────────────────────────────────────────── */
 function Ring({ r = 0.22, thick = 0.036 }: { r?: number; thick?: number }) {
   return (
     <>
@@ -78,7 +79,6 @@ function Ring({ r = 0.22, thick = 0.036 }: { r?: number; thick?: number }) {
   )
 }
 
-/* ── axis disc pair ───────────────────────────────────────── */
 function AxisDiscs({ span = 0.44, r = 0.095 }: { span?: number; r?: number }) {
   return (
     <>
@@ -92,7 +92,7 @@ function AxisDiscs({ span = 0.44, r = 0.095 }: { span?: number; r?: number }) {
   )
 }
 
-/* ── gripper finger ───────────────────────────────────────── */
+/* ── gripper ──────────────────────────────────────────────── */
 const PROX = 0.155
 const DIST = 0.185
 const MOUNT_R = 0.082
@@ -166,9 +166,9 @@ function Gripper({ spread = 0 }: { spread?: number }) {
   )
 }
 
-/* ── Gazebo-style ground ───────────────────────────────────── */
+/* ── ground (light Gazebo style) ───────────────────────────── */
 function Ground() {
-  const grid = useMemo(() => new THREE.GridHelper(14, 28, '#252535', '#1a1a28'), [])
+  const grid = useMemo(() => new THREE.GridHelper(14, 28, '#b8b8c0', '#d8d8e0'), [])
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.186, 0]}>
@@ -180,13 +180,7 @@ function Ground() {
   )
 }
 
-/* ── pick platform + cube ─────────────────────────────────────
-   The cube sits on a small platform at PICK_WORLD.
-   gripperPosRef is updated each frame by IndustrialArm.
-   When gripper gets within GRAB_DIST of the cube, the cube fades.
-─────────────────────────────────────────────────────────────── */
-const GRAB_DIST = 0.32
-
+/* ── pick object ──────────────────────────────────────────── */
 function PickObject({
   pickKey,
   gripperPosRef,
@@ -217,7 +211,6 @@ function PickObject({
 
   useFrame((_, delta) => {
     if (grabbed.current) {
-      /* fade out after grab */
       fadeProg.current = Math.min(1, fadeProg.current + delta / 0.55)
       const p = fadeProg.current
       cubeMat.opacity = 1 - p
@@ -226,44 +219,34 @@ function PickObject({
       if (groupRef.current) groupRef.current.scale.setScalar(1 + p * 0.7)
       return
     }
-
-    /* pulse glow while waiting */
     const t = performance.now() / 1000
     glowMat.opacity = 0.12 + Math.sin(t * 3.5) * 0.08
-
-    /* check if gripper has arrived */
     const dist = gripperPosRef.current.distanceTo(PICK_WORLD)
     if (dist < GRAB_DIST) grabbed.current = true
   })
 
   return (
     <group ref={groupRef} position={PICK_WORLD}>
-      {/* platform pedestal */}
       <mesh material={M_PLAT} position={[0, -0.20, 0]}>
         <boxGeometry args={[0.38, 0.25, 0.38]} />
       </mesh>
       <mesh material={M_PLAT} position={[0, -0.34, 0]}>
         <cylinderGeometry args={[0.14, 0.18, 0.08, 20]} />
       </mesh>
-
-      {/* orange cube */}
       <mesh>
         <boxGeometry args={[0.115, 0.115, 0.115]} />
         <primitive object={cubeMat} attach="material" />
       </mesh>
-
-      {/* pulsing glow ring */}
       <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.07, 0.20, 24]} />
         <primitive object={glowMat} attach="material" />
       </mesh>
-
       <pointLight color="#ff6010" intensity={0.7} distance={1.4} />
     </group>
   )
 }
 
-/* ── arm joints + links ───────────────────────────────────── */
+/* ── arm ──────────────────────────────────────────────────── */
 function IndustrialArm({
   targets,
   autoMode,
@@ -279,7 +262,7 @@ function IndustrialArm({
   const shoulderRef = useRef<THREE.Group>(null!)
   const elbowRef    = useRef<THREE.Group>(null!)
   const wristRef    = useRef<THREE.Group>(null!)
-  const gripperRef  = useRef<THREE.Group>(null!)   // for getWorldPosition
+  const gripperRef  = useRef<THREE.Group>(null!)
   const cur         = useRef<Joints>({ ...POSES.default })
   const animTime    = useRef(0)
   const curSpread   = useRef(0)
@@ -322,7 +305,6 @@ function IndustrialArm({
     elbowRef.current.rotation.x    = tgt.elbow
     wristRef.current.rotation.x    = tgt.wrist
 
-    /* update shared gripper world position */
     if (gripperRef.current) {
       gripperRef.current.getWorldPosition(gripperPosRef.current)
     }
@@ -333,7 +315,7 @@ function IndustrialArm({
   return (
     <group position={[0, -1.18, 0]} scale={1.15}>
 
-      {/* ══ BASE ══ */}
+      {/* BASE */}
       <mesh material={M_BASE}>
         <cylinderGeometry args={[0.50, 0.54, 0.24, 48]} />
       </mesh>
@@ -347,7 +329,7 @@ function IndustrialArm({
         <Ring r={0.25} thick={0.038} />
       </group>
 
-      {/* ══ WAIST Y ══ */}
+      {/* WAIST */}
       <group ref={waistRef} position={[0, 0.30, 0]}>
         <mesh material={M_BODY}>
           <cylinderGeometry args={[0.22, 0.26, 0.26, 36]} />
@@ -367,7 +349,7 @@ function IndustrialArm({
             <AxisDiscs span={0.46} r={0.095} />
           </group>
 
-          {/* ══ SHOULDER X ══ */}
+          {/* SHOULDER */}
           <group ref={shoulderRef} position={[0, 0.48, 0]}>
             <mesh material={M_LITE} position={[0, 0.06, 0]}>
               <boxGeometry args={[0.28, 0.10, 0.22]} />
@@ -401,7 +383,7 @@ function IndustrialArm({
               ishan
             </Text>
 
-            {/* ══ ELBOW ══ */}
+            {/* ELBOW */}
             <group position={[0, 1.04, 0]}>
               <mesh material={M_BODY}>
                 <boxGeometry args={[0.28, 0.19, 0.22]} />
@@ -420,7 +402,7 @@ function IndustrialArm({
                   <cylinderGeometry args={[0.095, 0.095, 0.026, 36]} />
                 </mesh>
 
-                {/* ══ WRIST ══ */}
+                {/* WRIST */}
                 <group position={[0, 0.70, 0]}>
                   <mesh material={M_LITE}>
                     <cylinderGeometry args={[0.088, 0.088, 0.10, 32]} />
@@ -431,7 +413,6 @@ function IndustrialArm({
                     <mesh material={M_BODY} position={[0, 0.09, 0]}>
                       <cylinderGeometry args={[0.078, 0.078, 0.12, 24]} />
                     </mesh>
-                    {/* gripper — ref here for world position tracking */}
                     <group ref={gripperRef} position={[0, 0.20, 0]}>
                       <Gripper spread={spread} />
                     </group>
@@ -446,32 +427,67 @@ function IndustrialArm({
   )
 }
 
-/* ── custom slider ────────────────────────────────────────── */
-function Slider({ label, value, min, max, onChange }: {
-  label: string; value: number; min: number; max: number; onChange: (v: number) => void
+/* ── degree slider ────────────────────────────────────────── */
+function SliderDeg({ label, valueRad, minDeg, maxDeg, onChange }: {
+  label: string; valueRad: number; minDeg: number; maxDeg: number
+  onChange: (rad: number) => void
 }) {
-  const pct = ((value - min) / (max - min)) * 100
+  const deg     = Math.round(valueRad * R2D)
+  const clamped = Math.max(minDeg, Math.min(maxDeg, deg))
+  const pct     = ((clamped - minDeg) / (maxDeg - minDeg)) * 100
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <span style={{ fontFamily: 'var(--font-mono-var)', fontSize: '0.60rem', color: 'var(--muted)', width: 58, flexShrink: 0 }}>
-        {label}
-      </span>
-      <div style={{ flex: 1, position: 'relative', height: 18, display: 'flex', alignItems: 'center' }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, height: 2, borderRadius: 2, background: 'var(--border)' }} />
-        <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: 2, width: `${pct}%`, borderRadius: 2, background: 'var(--green)' }} />
-        <input type="range" min={min} max={max} step={0.02} value={value}
-          onChange={e => onChange(Number(e.target.value))}
-          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
-        <div style={{
-          position: 'absolute', left: `calc(${pct}% - 6px)`,
-          width: 12, height: 12, borderRadius: '50%', pointerEvents: 'none',
-          background: 'var(--green)', border: '2px solid var(--bg)',
-          boxShadow: '0 0 8px rgba(63,185,80,0.55)',
-        }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', color: 'var(--muted)',
+      }}>
+        <span>{label}: <span style={{ color: 'var(--text)', fontWeight: 500 }}>{clamped}°</span></span>
       </div>
-      <span style={{ fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', color: 'var(--dimmed)', width: 28, textAlign: 'right' }}>
-        {value.toFixed(1)}
-      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ flex: 1, position: 'relative', height: 24, display: 'flex', alignItems: 'center' }}>
+          {/* track */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, height: 5,
+            borderRadius: 3, background: 'var(--surface)',
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.15)',
+          }} />
+          {/* fill */}
+          <div style={{
+            position: 'absolute', left: 0, height: 5, width: `${pct}%`,
+            borderRadius: 3, background: 'linear-gradient(90deg, var(--green), #46d058)',
+          }} />
+          {/* native range */}
+          <input type="range" min={minDeg} max={maxDeg} step={1} value={clamped}
+            onChange={e => onChange(Number(e.target.value) * D2R)}
+            style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
+          {/* chrome knob */}
+          <div style={{
+            position: 'absolute', left: `calc(${pct}% - 11px)`,
+            width: 22, height: 22, borderRadius: '50%', pointerEvents: 'none',
+            background: 'linear-gradient(145deg, #e8e8e8 0%, #c8c8c8 45%, #a8a8a8 100%)',
+            border: '1px solid rgba(0,0,0,0.22)',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.75)',
+          }}>
+            {/* knob center dot */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)',
+              width: 4, height: 4, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.3)',
+            }} />
+          </div>
+        </div>
+        {/* value box */}
+        <div style={{
+          fontFamily: 'var(--font-mono-var)', fontSize: '0.59rem',
+          color: 'var(--text)', width: 38, textAlign: 'center',
+          background: 'var(--bg2)', border: '1px solid var(--border)',
+          borderRadius: 3, padding: '2px 0', flexShrink: 0,
+        }}>
+          {clamped}°
+        </div>
+      </div>
     </div>
   )
 }
@@ -484,8 +500,8 @@ export default function RobotScene() {
   const [pickKey, setPickKey]       = useState(0)
   const [pickActive, setPickActive] = useState(false)
   const [gripSpread, setGripSpread] = useState(0)
+  const [saved, setSaved]           = useState(false)
 
-  /* shared ref — IndustrialArm writes gripper world pos every frame */
   const gripperPosRef = useRef(new THREE.Vector3())
 
   function applyPreset(name: string) {
@@ -496,9 +512,9 @@ export default function RobotScene() {
     if (name === 'pick') {
       setPickKey(k => k + 1)
       setPickActive(true)
-      setGripSpread(0.9)                          // open gripper
-      setTimeout(() => setGripSpread(0), 2400)    // close when near object
-      setTimeout(() => setPickActive(false), 5000)// cleanup after fade completes
+      setGripSpread(0.9)
+      setTimeout(() => setGripSpread(0), 2400)
+      setTimeout(() => setPickActive(false), 5000)
     } else {
       setPickActive(false)
       setGripSpread(0)
@@ -521,43 +537,45 @@ export default function RobotScene() {
     setGripSpread(0)
   }
 
+  const statusColor = autoMode ? 'var(--green)' : pickActive ? 'var(--orange)' : 'var(--blue)'
+  const statusLabel = autoMode ? 'greeting · touch slider to control' : pickActive ? 'executing pick sequence...' : 'manual control'
+
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg2)' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'row', background: 'var(--bg2)', overflow: 'hidden' }}>
 
-      {/* mode label */}
-      <div style={{
-        padding: '5px 14px 4px', background: 'var(--bg)',
-        borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: 6,
-        fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem',
-        color: autoMode ? 'var(--green)' : pickActive ? 'var(--orange)' : 'var(--blue)',
-        flexShrink: 0,
-      }}>
-        <span style={{
-          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-          background: autoMode ? 'var(--green)' : pickActive ? 'var(--orange)' : 'var(--blue)',
-          boxShadow: autoMode ? '0 0 6px rgba(63,185,80,0.6)' : pickActive ? '0 0 6px rgba(247,129,102,0.6)' : '0 0 6px rgba(88,166,255,0.6)',
-        }} />
-        {autoMode ? 'greeting · touch any slider to take control' : pickActive ? 'executing pick sequence...' : 'manual control'}
-      </div>
+      {/* ── 3D VIEW ── */}
+      <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+        {/* status badge */}
+        <div style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 10,
+          display: 'flex', alignItems: 'center', gap: 5,
+          fontFamily: 'var(--font-mono-var)', fontSize: '0.55rem',
+          color: statusColor,
+          background: 'var(--bg)', border: '1px solid var(--border)',
+          borderRadius: 4, padding: '3px 8px',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+        }}>
+          <span style={{
+            width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+            background: statusColor,
+            boxShadow: `0 0 5px ${statusColor}`,
+          }} />
+          {statusLabel}
+        </div>
 
-      <div style={{ flex: 1, minHeight: 0 }}>
         <Canvas
-          camera={{ position: [3.4, 0.4, 3.4], fov: 50 }}
-          gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+          camera={{ position: [2.8, 0.6, 3.2], fov: 50 }}
+          gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
         >
-          <ambientLight intensity={0.55} />
-          <directionalLight position={[5, 8, 4]}  intensity={1.9} color="#ffffff" />
-          <directionalLight position={[-4, 3, -2]} intensity={0.45} color="#c0d8ff" />
-          <pointLight position={[0, -0.5, 2]} color="#3fb950" intensity={1.2} distance={5} />
+          <ambientLight intensity={0.9} />
+          <directionalLight position={[5, 8, 4]}  intensity={1.6} color="#ffffff" />
+          <directionalLight position={[-4, 3, -2]} intensity={0.35} color="#d0e8ff" />
+          <pointLight position={[0, -0.5, 2]} color="#3fb950" intensity={0.5} distance={5} />
 
           <Ground />
           {pickActive && (
-            <PickObject
-              key={pickKey}
-              pickKey={pickKey}
-              gripperPosRef={gripperPosRef}
-            />
+            <PickObject key={pickKey} pickKey={pickKey} gripperPosRef={gripperPosRef} />
           )}
           <IndustrialArm
             targets={joints}
@@ -565,40 +583,107 @@ export default function RobotScene() {
             gripSpread={gripSpread}
             gripperPosRef={gripperPosRef}
           />
-          <OrbitControls enableZoom={false} enablePan={false} minPolarAngle={0.3} maxPolarAngle={Math.PI * 0.58} />
-          <Environment preset="warehouse" environmentIntensity={0.4} />
+          <OrbitControls enableZoom={false} enablePan={false} minPolarAngle={0.2} maxPolarAngle={Math.PI * 0.58} />
+          <Environment preset="warehouse" environmentIntensity={0.55} />
         </Canvas>
       </div>
 
-      <div style={{ padding: '10px 14px 13px', background: 'var(--bg)', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          {Object.keys(POSES).map(name => (
-            <button key={name} onClick={() => applyPreset(name)} style={{
-              fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', padding: '3px 9px',
-              borderRadius: 4, cursor: 'pointer', transition: 'all 0.15s',
-              border: `1px solid ${activePreset === name && !autoMode ? 'var(--green)' : 'var(--border)'}`,
-              background: activePreset === name && !autoMode ? 'rgba(63,185,80,0.12)' : 'var(--surface)',
-              color: activePreset === name && !autoMode ? 'var(--green)' : 'var(--muted)',
-            }}>
-              {name}
-            </button>
-          ))}
-          <button onClick={resetToAuto} style={{
-            fontFamily: 'var(--font-mono-var)', fontSize: '0.58rem', padding: '3px 9px',
-            borderRadius: 4, cursor: 'pointer', marginLeft: 'auto',
-            border: `1px solid ${autoMode ? 'var(--green)' : 'var(--border)'}`,
-            background: autoMode ? 'rgba(63,185,80,0.12)' : 'var(--surface)',
-            color: autoMode ? 'var(--green)' : 'var(--muted)',
+      {/* ── CONTROL PANEL ── */}
+      <div style={{
+        width: 210, flexShrink: 0,
+        background: 'var(--bg)', borderLeft: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column', gap: 8,
+        padding: '12px 12px 14px',
+        overflowY: 'auto',
+      }}>
+        {/* header */}
+        <div style={{
+          fontFamily: 'var(--font-mono-var)', fontSize: '0.62rem',
+          color: 'var(--text)', fontWeight: 600,
+          paddingBottom: 7, borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span>Joint Controls</span>
+          <span style={{ fontSize: '0.52rem', color: 'var(--dimmed)', fontWeight: 400 }}>4-DOF</span>
+        </div>
+
+        {/* sliders */}
+        <SliderDeg label="Base Rotation"  valueRad={joints.base}     minDeg={-180} maxDeg={180} onChange={v => setJ('base', v)} />
+        <SliderDeg label="Upper Arm"      valueRad={joints.shoulder} minDeg={-86}  maxDeg={12}  onChange={v => setJ('shoulder', v)} />
+        <SliderDeg label="Forearm"        valueRad={joints.elbow}    minDeg={-6}   maxDeg={103} onChange={v => setJ('elbow', v)} />
+        <SliderDeg label="Wrist"          valueRad={joints.wrist}    minDeg={-86}  maxDeg={86}  onChange={v => setJ('wrist', v)} />
+
+        {/* preset buttons */}
+        <div style={{ paddingTop: 2 }}>
+          <div style={{
+            fontFamily: 'var(--font-mono-var)', fontSize: '0.56rem',
+            color: 'var(--dimmed)', marginBottom: 6,
           }}>
-            reset
-          </button>
+            Presets
+          </div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {(['default', 'reach', 'pick', 'extend'] as const).map(name => {
+              const isActive = activePreset === name && !autoMode
+              const col = PRESET_COLORS[name]
+              return (
+                <button key={name} onClick={() => applyPreset(name)} style={{
+                  fontFamily: 'var(--font-mono-var)', fontSize: '0.57rem',
+                  padding: '4px 8px', borderRadius: 4, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  border: `1px solid ${isActive ? col : 'var(--border)'}`,
+                  background: isActive ? `color-mix(in srgb, ${col} 12%, var(--surface))` : 'var(--surface)',
+                  color: isActive ? col : 'var(--muted)',
+                  transition: 'all 0.15s',
+                }}>
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                    background: isActive ? col : 'var(--border)',
+                    boxShadow: isActive ? `0 0 6px ${col}` : 'none',
+                    transition: 'all 0.15s',
+                  }} />
+                  {name}
+                </button>
+              )
+            })}
+            <button onClick={resetToAuto} style={{
+              fontFamily: 'var(--font-mono-var)', fontSize: '0.57rem',
+              padding: '4px 8px', borderRadius: 4, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
+              border: `1px solid ${autoMode ? 'var(--border2)' : 'var(--border)'}`,
+              background: autoMode ? 'var(--surface)' : 'var(--surface)',
+              color: autoMode ? 'var(--text)' : 'var(--muted)',
+              transition: 'all 0.15s',
+            }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                background: autoMode ? 'var(--muted)' : 'var(--border)',
+              }} />
+              reset
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-          <Slider label="Rotation 1" value={joints.base}     min={-Math.PI} max={Math.PI} onChange={v => setJ('base', v)} />
-          <Slider label="Rotation 2" value={joints.shoulder} min={-1.5}     max={0.2}     onChange={v => setJ('shoulder', v)} />
-          <Slider label="Rotation 3" value={joints.elbow}    min={-0.1}     max={1.8}     onChange={v => setJ('elbow', v)} />
-          <Slider label="Rotation 4" value={joints.wrist}    min={-1.5}     max={1.5}     onChange={v => setJ('wrist', v)} />
-        </div>
+
+        {/* save configuration */}
+        <button
+          onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 1500) }}
+          style={{
+            marginTop: 'auto',
+            padding: '9px 12px',
+            borderRadius: 5, cursor: 'pointer', width: '100%',
+            fontFamily: 'var(--font-mono-var)', fontSize: '0.62rem', fontWeight: 600,
+            background: saved
+              ? 'linear-gradient(135deg, #46d058, #3fb950)'
+              : 'linear-gradient(135deg, #e0e0e0, #b8b8b8)',
+            border: saved ? '1px solid #3fb950' : '1px solid rgba(0,0,0,0.18)',
+            color: saved ? '#fff' : '#2a2a2a',
+            boxShadow: saved
+              ? '0 0 12px rgba(63,185,80,0.35)'
+              : '0 2px 6px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.65)',
+            transition: 'all 0.25s',
+          }}
+        >
+          {saved ? '✓ Saved' : 'Save Configuration'}
+        </button>
       </div>
     </div>
   )

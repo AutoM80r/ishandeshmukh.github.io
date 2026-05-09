@@ -1,5 +1,5 @@
 export const HERO = {
-  chip: 'MIT Manipal · Mechatronics · Incoming GET @ Tata Motors',
+  chip: 'MIT Manipal · Class of 2026 · Incoming GET @ Tata Motors',
   name: 'Ishan',
   surname: 'Deshmukh.',
   roles: ['Engineer', 'Builder', 'Roboticist'],
@@ -16,8 +16,8 @@ export const HERO = {
 export const ABOUT = {
   bio: [
     'Four years ago I walked into MIT Manipal with one very specific idea — the <strong>Tony Stark model of engineering</strong>. That the best things get built by people who are a little obsessed, who can\'t stop thinking about a problem, who build in the workshop at 2am because they genuinely want to see it work.',
-    'I found that energy in <strong>Team RoboManipal</strong>. Joined as a second-year, worked my way up through the electronics team, and spent years designing the embedded systems and custom PCBs that drove our competition bots. DD Robocon 2024 — vision-guided manipulator arm, omnidirectional drive, depth camera integration. We finished <strong>AIR 22 nationally</strong>. Missed ABU qualification by 10 ranks. It stung, and it taught me more than any result that went our way.',
-    'Last summer I was at <strong>UNIKRAFT Techno LLP</strong> programming an ABB IRB 2600 industrial robot — offline RAPID programming in RobotStudio, TCP calibration, arc welding path optimisation. Real industrial hardware, real tolerances. In July I join <strong>Tata Motors</strong> as a Graduate Engineer Trainee — the result of everything I\'ve built, debugged, failed at, and rebuilt over four years. <strong>Robotics Head at IE Mechatronics</strong> — 200 members, 50+ mentored. Two patent applications pending.',
+    'I found that energy in <strong>Team RoboManipal</strong>. Started in the task phase as a first-year, got into the team in second year, and competed at DD Robocon 2024 in third — vision-guided manipulator arm, omnidirectional drive, depth camera integration. We finished <strong>AIR 22 nationally</strong>. Missed ABU qualification by 10 ranks. It stung, and it taught me more than any result that went our way.',
+    'Third-year summer: <strong>UNIKRAFT Techno LLP</strong> — ABB IRB 2600 robotic welding cell, offline RAPID programming, arc welding path optimisation. Followed by a <strong>KUKA industrial robot training program</strong>. Fourth year I cracked <strong>Tata Motors GET</strong> during placements. Right now I\'m finishing my final semester as an <strong>Embedded Intern at Cosy Farms</strong> in Mumbai — sensor fusion, STM32 control systems, automated indoor farming. Joining Tata Motors in July.',
   ],
   skills: [
     { label: 'STM32 / Embedded C', color: '#f78166' },
@@ -38,6 +38,7 @@ export const ABOUT = {
     { key: 'minor', value: 'Robotics & Automation' },
     { key: 'institute', value: 'MIT, MAHE · Manipal, India' },
     { key: 'batch', value: '2022 – 2026' },
+    { key: 'current role', value: 'Embedded Systems Intern · Cosy Farms · Mumbai' },
     { key: 'next role', value: 'Graduate Engineer Trainee · Tata Motors · Jul 2026' },
     { key: 'clubs', value: 'RoboManipal · IE Mechatronics' },
     { key: 'languages', value: 'Hindi · Marathi · English · German (learning)' },
@@ -402,6 +403,18 @@ export const JOURNAL_POSTS: JournalPost[] = [
 export const RESUME = {
   experience: [
     {
+      role: 'Embedded Systems Intern',
+      org: 'Cosy Farms',
+      location: 'Mumbai, India',
+      period: 'Jan 2026 – Jun 2026',
+      points: [
+        'Designing STM32-based embedded control systems for automated indoor hydroponic farming',
+        'Implementing sensor fusion for real-time monitoring of CO₂, humidity, pH, and nutrient levels',
+        'Building data logging and alert systems to reduce manual monitoring overhead',
+        'Developing actuator control loops for lighting, irrigation, and climate management',
+      ],
+    },
+    {
       role: 'Automation Intern',
       org: 'UNIKRAFT Techno LLP',
       location: 'India',
@@ -411,6 +424,16 @@ export const RESUME = {
         'Used ABB RobotStudio for workcell simulation, offline RAPID programming, TCP setup, and arc welding path optimisation',
         'Operated the robot via FlexPendant for testing, ensuring safety, accuracy, and repeatability across test cycles',
         'Designed system workflow block diagrams and contributed to safety procedure documentation',
+      ],
+    },
+    {
+      role: 'Industrial Robot Training',
+      org: 'KUKA Robotics',
+      location: 'India',
+      period: 'Summer 2025 · 1 week',
+      points: [
+        'Attended KUKA industrial robot programming and operations training',
+        'Hands-on practice with KUKA robot workcell setup, programming, and safety procedures',
       ],
     },
     {

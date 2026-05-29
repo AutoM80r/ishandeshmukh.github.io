@@ -20,9 +20,9 @@ export const ABOUT = {
     'Third-year summer: <strong>UNIKRAFT Techno LLP</strong> — ABB IRB 2600 robotic welding cell, offline RAPID programming, arc welding path optimisation. Followed by a <strong>KUKA industrial robot training program</strong>. Fourth year I cracked <strong>Tata Motors GET</strong> during placements. Final semester at <strong>Cosy Farms</strong> in Mumbai — a vertical farming startup deploying micro-farm modules in luxury hotels. I joined with a broken vendor system and zero documentation: reverse engineered it, redesigned irrigation to a gravity cascade, calibrated Atlas Scientific pH and EC sensors, built condensate recovery on Arduino Nano, and got it live at <strong>Radisson Hotel</strong>. Then migrated the entire platform from Raspberry Pi to <strong>ESP32-S3</strong>, co-developed Autodosing v2.0 with iterative closed-loop dosing (±2–5% accuracy), and evolved hardware through three KiCad PCB generations to production-grade. Now deploying to <strong>Novotel and Four Seasons Mumbai</strong>. Joining Tata Motors in July.',
   ],
   skills: [
-    { label: 'STM32 / ESP32-S3', color: '#f78166' },
+    { label: 'STM32 / Embedded C', color: '#f78166' },
+    { label: 'ESP32-S3 · FreeRTOS', color: '#3fb950' },
     { label: 'PCB Design · KiCad', color: '#58a6ff' },
-    { label: 'FreeRTOS / PlatformIO', color: '#3fb950' },
     { label: 'ABB RobotStudio', color: '#e3b341' },
     { label: 'SolidWorks / CAD', color: '#bc8cff' },
     { label: 'Python · C++', color: '#58a6ff' },
@@ -474,7 +474,7 @@ export const RESUME = {
     { title: '2 Patent Applications Pending', sub: 'IIOT Sensory Haptic Device · Soft Robotic Gripper' },
   ],
   skills: [
-    { category: 'Embedded', items: ['STM32 / ESP32-S3 / Embedded C', 'PCB Design · KiCad', 'FreeRTOS / PlatformIO', 'BLDC FOC Control', 'ROS 2'] },
+    { category: 'Embedded', items: ['STM32 / Embedded C', 'ESP32-S3 / PlatformIO / FreeRTOS', 'PCB Design · KiCad', 'BLDC FOC Control', 'ROS 2'] },
     { category: 'Mechanical', items: ['SolidWorks', 'Fusion 360', 'ANSYS Structural', '3D Printing · FDM / SLA', 'Kinematics & Dynamics'] },
     { category: 'Software', items: ['Python', 'C / C++', 'MATLAB', 'ABB RobotStudio / RAPID', 'PLC / KRL'] },
     { category: 'Systems', items: ['Closed-Loop Control', 'Sensor Calibration', 'Computer Vision', 'Iterative Dosing Algorithms', 'PID Control'] },

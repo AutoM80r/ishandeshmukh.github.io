@@ -17,20 +17,20 @@ export const ABOUT = {
   bio: [
     'Four years ago I walked into MIT Manipal with one very specific idea — the <strong>Tony Stark model of engineering</strong>. That the best things get built by people who are a little obsessed, who can\'t stop thinking about a problem, who build in the workshop at 2am because they genuinely want to see it work.',
     'I found that energy in <strong>Team RoboManipal</strong>. Started in the task phase as a first-year, got into the team in second year, and competed at DD Robocon 2024 in third — vision-guided manipulator arm, omnidirectional drive, depth camera integration. We finished <strong>AIR 22 nationally</strong>. Missed ABU qualification by 10 ranks. It stung, and it taught me more than any result that went our way.',
-    'Third-year summer: <strong>UNIKRAFT Techno LLP</strong> — ABB IRB 2600 robotic welding cell, offline RAPID programming, arc welding path optimisation. Followed by a <strong>KUKA industrial robot training program</strong>. Fourth year I cracked <strong>Tata Motors GET</strong> during placements. Right now I\'m finishing my final semester as an <strong>Embedded Intern at Cosy Farms</strong> in Mumbai — sensor fusion, STM32 control systems, automated indoor farming. Joining Tata Motors in July.',
+    'Third-year summer: <strong>UNIKRAFT Techno LLP</strong> — ABB IRB 2600 robotic welding cell, offline RAPID programming, arc welding path optimisation. Followed by a <strong>KUKA industrial robot training program</strong>. Fourth year I cracked <strong>Tata Motors GET</strong> during placements. Final semester at <strong>Cosy Farms</strong> in Mumbai — a vertical farming startup deploying micro-farm modules in luxury hotels. I joined with a broken vendor system and zero documentation: reverse engineered it, redesigned irrigation to a gravity cascade, calibrated Atlas Scientific pH and EC sensors, built condensate recovery on Arduino Nano, and got it live at <strong>Radisson Hotel</strong>. Then migrated the entire platform from Raspberry Pi to <strong>ESP32-S3</strong>, co-developed Autodosing v2.0 with iterative closed-loop dosing (±2–5% accuracy), and evolved hardware through three KiCad PCB generations to production-grade. Now deploying to <strong>Novotel and Four Seasons Mumbai</strong>. Joining Tata Motors in July.',
   ],
   skills: [
-    { label: 'STM32 / Embedded C', color: '#f78166' },
+    { label: 'STM32 / ESP32-S3', color: '#f78166' },
     { label: 'PCB Design · KiCad', color: '#58a6ff' },
-    { label: 'ROS 2', color: '#3fb950' },
+    { label: 'FreeRTOS / PlatformIO', color: '#3fb950' },
     { label: 'ABB RobotStudio', color: '#e3b341' },
     { label: 'SolidWorks / CAD', color: '#bc8cff' },
     { label: 'Python · C++', color: '#58a6ff' },
-    { label: 'Control Systems', color: '#e3b341' },
+    { label: 'ROS 2', color: '#3fb950' },
     { label: 'PLC / KRL', color: '#f78166' },
     { label: '3D Printing', color: '#bc8cff' },
     { label: 'Motor Control', color: '#58a6ff' },
-    { label: 'Computer Vision', color: '#3fb950' },
+    { label: 'Sensor Calibration', color: '#3fb950' },
     { label: 'MATLAB', color: '#e3b341' },
   ],
   table: [
@@ -408,10 +408,11 @@ export const RESUME = {
       location: 'Mumbai, India',
       period: 'Jan 2026 – Jun 2026',
       points: [
-        'Designing STM32-based embedded control systems for automated indoor hydroponic farming',
-        'Implementing sensor fusion for real-time monitoring of CO₂, humidity, pH, and nutrient levels',
-        'Building data logging and alert systems to reduce manual monitoring overhead',
-        'Developing actuator control loops for lighting, irrigation, and climate management',
+        'Reverse engineered vendor-installed Raspberry Pi hydroponics controller with no documentation; redesigned irrigation from parallel solenoid-valve to 4-level gravity cascade, eliminating 60–70% pressure loss',
+        'Integrated and calibrated Atlas Scientific EZO-pH (±0.02) and EZO-EC sensors in a 3D-printed flow-through chamber; deployed commercially at Radisson Hotel, Mumbai since March 2026',
+        'Migrated full platform from Raspberry Pi dual-board stack to ESP32-S3 N16R8 — developed PlatformIO/FreeRTOS firmware, reducing BOM cost by ~₹2,000/unit and boot time from 30s to <1s',
+        'Co-developed Autodosing v2.0: iterative closed-loop dosing (fixed 15 ml → 60s mix → measure → repeat) with individual per-pump volumetric calibration, improving dosing accuracy from ±8–15% to ±2–5%',
+        'Evolved PCB hardware through 3 generations (perfboard → carrier → industry-grade KiCad board with embedded N16R8 chip); system now scaling to Novotel and Four Seasons Mumbai deployments',
       ],
     },
     {
@@ -469,13 +470,13 @@ export const RESUME = {
   achievements: [
     { title: 'Incoming GET · Tata Motors', sub: 'Graduate Engineer Trainee · joining July 2026' },
     { title: 'AIR 22 · DD Robocon 2024', sub: 'National robotics championship · top 10% of all teams' },
+    { title: 'Commercial Deployment · 3 Hotels', sub: 'Cosy Farms live at Radisson, Novotel, Four Seasons Mumbai' },
     { title: '2 Patent Applications Pending', sub: 'IIOT Sensory Haptic Device · Soft Robotic Gripper' },
-    { title: 'GrabCAD Publication', sub: 'Quadruped robot design · 200+ downloads' },
   ],
   skills: [
-    { category: 'Embedded', items: ['STM32 / Embedded C', 'BLDC FOC Control', 'PCB Design · KiCad', 'Arduino / ESP32 / Raspberry Pi', 'ROS 2'] },
+    { category: 'Embedded', items: ['STM32 / ESP32-S3 / Embedded C', 'PCB Design · KiCad', 'FreeRTOS / PlatformIO', 'BLDC FOC Control', 'ROS 2'] },
     { category: 'Mechanical', items: ['SolidWorks', 'Fusion 360', 'ANSYS Structural', '3D Printing · FDM / SLA', 'Kinematics & Dynamics'] },
     { category: 'Software', items: ['Python', 'C / C++', 'MATLAB', 'ABB RobotStudio / RAPID', 'PLC / KRL'] },
-    { category: 'Research', items: ['Sensor Fusion', 'Computer Vision', 'Soft Robotics', 'Path Planning', 'PID Control'] },
+    { category: 'Systems', items: ['Closed-Loop Control', 'Sensor Calibration', 'Computer Vision', 'Iterative Dosing Algorithms', 'PID Control'] },
   ],
 }

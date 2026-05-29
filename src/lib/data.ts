@@ -29,7 +29,7 @@ export const ABOUT = {
     { label: 'ROS 2', color: '#3fb950' },
     { label: 'PLC / KRL', color: '#f78166' },
     { label: '3D Printing', color: '#bc8cff' },
-    { label: 'Motor Control', color: '#58a6ff' },
+    { label: 'Arduino / Raspberry Pi', color: '#58a6ff' },
     { label: 'Sensor Calibration', color: '#3fb950' },
     { label: 'MATLAB', color: '#e3b341' },
   ],
@@ -173,7 +173,7 @@ export const PROJECT_DETAILS: ProjectDetail[] = [
     problem:
       'Robocon 2025\'s challenge demanded sub-centimetre placement accuracy in a dynamic competition arena — impossible to achieve with pure encoder odometry. Drift accumulates, arena surfaces aren\'t perfectly flat, and opponents can displace your robot mid-task. The core engineering problem was: how do you localise and act accurately without external positioning infrastructure?',
     role:
-      'I led the embedded systems and PCB design for R1. Designed and fabricated the main controller PCB (STM32F4-based), all motor driver boards, and the sensor fusion board. Wrote the BLDC FOC control loop in Embedded C, integrated the depth camera (Intel RealSense D435) with ROS 2 running on a companion Raspberry Pi 5, and implemented the inter-board UART communication protocol.',
+      'I led the embedded systems and PCB design for R1. Designed and fabricated the main controller PCB (STM32F4-based), all motor driver boards, and the sensor fusion board. Wrote motor control firmware in Embedded C using PWM, integrated the depth camera (Intel RealSense D435) with ROS 2 running on a companion Raspberry Pi 5, and implemented the inter-board UART communication protocol.',
     outcome:
       'We finished AIR 22 nationally at DD Robocon 2025 — top 10% of all participating teams. Missed ABU Robocon qualification by 10 ranks. The depth camera + vision pipeline achieved reliable localisation within ±3 mm under competition lighting. The custom PCBs had zero field failures across all matches.',
     specs: [
@@ -457,7 +457,7 @@ export const RESUME = {
         'Fabricated, prototyped, and assembled 5+ competition-grade robots implementing advanced embedded systems',
         'Programmed STM32 microcontrollers and PWM control algorithms, integrating 7+ sensors and 10+ motors',
         'Led embedded software for DD Robocon 2024 — vision-guided omnidirectional robot (AIR 22 nationally)',
-        'Implemented BLDC FOC motor control, depth camera integration, and inter-robot comms with ±3 mm localisation accuracy',
+        'Implemented PWM motor control, depth camera integration, and inter-robot comms protocol with ±3 mm localisation accuracy',
       ],
     },
   ],
@@ -474,7 +474,7 @@ export const RESUME = {
     { title: '2 Patent Applications Pending', sub: 'IIOT Sensory Haptic Device · Soft Robotic Gripper' },
   ],
   skills: [
-    { category: 'Embedded', items: ['STM32 / Embedded C', 'ESP32-S3 / PlatformIO / FreeRTOS', 'PCB Design · KiCad', 'BLDC FOC Control', 'ROS 2'] },
+    { category: 'Embedded', items: ['STM32 / Embedded C', 'ESP32-S3 / PlatformIO / FreeRTOS', 'PCB Design · KiCad', 'Arduino / Raspberry Pi', 'ROS 2'] },
     { category: 'Mechanical', items: ['SolidWorks', 'Fusion 360', 'ANSYS Structural', '3D Printing · FDM / SLA', 'Kinematics & Dynamics'] },
     { category: 'Software', items: ['Python', 'C / C++', 'MATLAB', 'ABB RobotStudio / RAPID', 'PLC / KRL'] },
     { category: 'Systems', items: ['Closed-Loop Control', 'Sensor Calibration', 'Computer Vision', 'Iterative Dosing Algorithms', 'PID Control'] },

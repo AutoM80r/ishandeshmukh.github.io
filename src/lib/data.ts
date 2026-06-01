@@ -73,6 +73,19 @@ export interface Project {
 
 export const PROJECTS: Project[] = [
   {
+    slug: 'hydroponics',
+    name: 'automated-hydroponics',
+    description:
+      'Closed-loop hydroponics control system for vertical micro-farming. ESP32-S3, iterative autodosing v2.0, 3 PCB generations. Live at Radisson, Novotel, Four Seasons Mumbai.',
+    badge: 'internship',
+    badgeVariant: 'orange' as BadgeVariant,
+    tags: [
+      { label: 'ESP32-S3', color: '#3fb950' },
+      { label: 'PCB Design', color: '#58a6ff' },
+      { label: 'Closed-Loop Control', color: '#e3b341' },
+    ],
+  },
+  {
     slug: 'r1',
     name: 'robocon-r1-robot',
     description:
@@ -154,6 +167,37 @@ export const VIDEOS = [
 ]
 
 export const PROJECT_DETAILS: ProjectDetail[] = [
+  {
+    slug: 'hydroponics',
+    name: 'automated-hydroponics',
+    headline: 'Closed-Loop Hydroponics Control System — Cosy Farms',
+    badge: 'internship',
+    badgeVariant: 'orange' as BadgeVariant,
+    image: '/images/cosy-farms/system/cover.jpg',
+    tags: [
+      { label: 'ESP32-S3', color: '#3fb950' },
+      { label: 'PCB Design · KiCad', color: '#58a6ff' },
+      { label: 'PlatformIO / FreeRTOS', color: '#e3b341' },
+      { label: 'Atlas Scientific', color: '#bc8cff' },
+      { label: 'Closed-Loop Control', color: '#f78166' },
+    ],
+    overview:
+      'Six-month internship at Cosy Farms — a Mumbai startup that deploys self-contained vertical micro-farm modules in luxury hotels (Radisson, Novotel, Four Seasons). Each module grows leafy greens and herbs directly for the hotel kitchen under full-spectrum LED lighting, automated irrigation, and a closed-loop nutrient dosing system. The internship ran in two phases: Phase 1 stabilised the broken vendor system and got it commercially deployed; Phase 2 redesigned the entire embedded platform from Raspberry Pi to ESP32-S3 and built production-grade autodosing firmware and PCB.',
+    problem:
+      'The vendor-installed V1 system had no documentation and five critical failures: parallel solenoid-valve irrigation causing 60–70% pressure loss to upper trays; opaque compiled binary automation with no diagnostic capability; no closed-loop pH or EC control; HVAC condensate draining onto the hotel floor; and zero system documentation. Phase 2 added a second layer of problems — the Raspberry Pi dual-board stack was too expensive and complex to scale to multiple hotel deployments, and the V1 autodosing had ±8–15% dosing errors from assumed pump flow rates and unreliable ultrasonic volume estimation.',
+    role:
+      'Phase 1 (Jan–Apr 2026): Reverse engineered the full vendor system. Redesigned irrigation to a 4-level gravity cascade. Replaced binary automation with Linux cron scheduling. Integrated Atlas Scientific EZO-pH and EZO-EC sensors in a 3D-printed flow-through chamber, calibrated to ±0.02 pH units. Built a standalone condensate recovery system on Arduino Nano recovering 500–800 ml/day. Validated the system commercially at Radisson Hotel, Mumbai. Phase 2 (Apr–Jun 2026): Migrated the platform to ESP32-S3 N16R8 on PlatformIO/FreeRTOS. Performed individual volumetric calibration of all four Kamoer peristaltic pump channels (468/449/449/468 ms/ml). Co-developed Autodosing v2.0 — iterative closed-loop strategy: 15 ml fixed dose → 60s mix → measure → repeat, up to 8 iterations, eliminating volume-estimation dependency. Integrated MH-Z19E CO₂ sensor and XKC-Y26 water level sensors. Evolved PCB hardware through 3 generations (perfboard prototype → V2 carrier board → V3 industry-grade KiCad board with embedded N16R8 chip, JLCPCB SMT assembly).',
+    outcome:
+      'V1 system commercially deployed at Radisson Hotel, Mumbai since March 2026 — weekly harvests of leafy greens for the hotel kitchen, zero irrigation failures. Dosing accuracy improved from ±8–15% to ±2–5%. Platform cost reduced by ~₹2,000/unit. Boot time from 30s to <1s. V3 PCB passed KiCad DRC with zero violations. System now scaling to Novotel Mumbai and Four Seasons Mumbai deployments.',
+    specs: [
+      { key: 'MCU', value: 'ESP32-S3 N16R8 · dual-core 240 MHz' },
+      { key: 'firmware', value: 'PlatformIO / Arduino / FreeRTOS' },
+      { key: 'sensors', value: 'Atlas Scientific EZO-pH · EZO-EC · MH-Z19E CO₂' },
+      { key: 'dosing', value: 'Autodosing v2.0 · iterative closed-loop · ±2–5% accuracy' },
+      { key: 'PCB', value: '3 generations · V3 KiCad + JLCPCB SMT · embedded N16R8' },
+      { key: 'deployed', value: 'Radisson · Novotel · Four Seasons · Mumbai' },
+    ],
+  },
   {
     slug: 'r1',
     name: 'robocon-r1-robot',
